@@ -2,32 +2,32 @@ package com.example.smartnotes.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.smartnotes.data.Task
-import com.example.smartnotes.data.TaskRepository
+import com.example.smartnotes.data.Item
+import com.example.smartnotes.data.ItemRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class TaskViewModel: ViewModel() {
-    val tasks: StateFlow<List<Task>> = TaskRepository.tasks
+class ItemViewModel : ViewModel() {
+    val items: StateFlow<List<Item>> = ItemRepository.items
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun addTask(title: String, dateTimeText: String) {
+    fun addItem(item: Item) {
         viewModelScope.launch {
-            TaskRepository.addTask(Task(title = title, dateTimeText = dateTimeText))
+            ItemRepository.addItem(item)
         }
     }
 
-    fun updateTask(task: Task) {
+    fun updateItem(item: Item) {
         viewModelScope.launch {
-            TaskRepository.updateTask(task)
+            ItemRepository.updateItem(item)
         }
     }
 
-    fun removeTask(id: String) {
+    fun removeItem(id: String) {
         viewModelScope.launch {
-            TaskRepository.removeTask(id)
+            ItemRepository.removeItem(id)
         }
     }
 }
