@@ -12,7 +12,7 @@ object ItemRepository {
             title = "Completar informe mensual",
             description = "Revisar datos financieros, redactar conclusiones y enviar a gerente antes de la fecha hoy",
             dateTimeText = "Ayer, 3 PM",
-            attachments = listOf("file:///android_asset/sample_image.jpg") // Simulado
+            attachments = listOf("file:///android_asset/sample_image.jpg")
         ),
         Item.Task(
             title = "Presentación cliente nuevo",

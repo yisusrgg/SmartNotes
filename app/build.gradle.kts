@@ -53,7 +53,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.compose.foundation)
-
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.6.8")
     implementation("io.coil-kt:coil-compose:2.5.0")
 
     testImplementation(libs.junit)

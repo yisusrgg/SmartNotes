@@ -7,8 +7,8 @@ sealed class Item {
     abstract val title: String
     abstract val description: String
     abstract val completed: Boolean
-    abstract val attachments: List<String> // URIs/paths de imágenes/archivos
-    abstract val audios: List<String> // Paths de audios
+    abstract val attachments: List<String>
+    abstract val audios: List<String>
 
     data class Task(
         override val id: String = UUID.randomUUID().toString(),

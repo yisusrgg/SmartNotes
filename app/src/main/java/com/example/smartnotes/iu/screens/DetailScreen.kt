@@ -54,7 +54,7 @@ fun DetailScreen(
                 .fillMaxSize()
         ) {
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth() .padding(8.dp),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -62,17 +62,6 @@ fun DetailScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Checkbox(
-                            checked = item.completed,
-                            onCheckedChange = {
-                                val updated = when (item) {
-                                    is Item.Task -> item.copy(completed = it)
-                                    is Item.Note -> item.copy(completed = it)
-                                }
-                                viewModel.updateItem(updated)
-                            }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = item.title,
                             style = MaterialTheme.typography.headlineSmall,
@@ -80,11 +69,7 @@ fun DetailScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = item.description,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Spacer(modifier = Modifier.height(10.dp))
                     if (isTask) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
@@ -96,11 +81,17 @@ fun DetailScreen(
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = item.description,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+
 
                     // Multimedia
                     if (item.attachments.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Adjuntos:", style = MaterialTheme.typography.bodyMedium)
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text("Adjuntos:", style = MaterialTheme.typography.bodyLarge)
                         LazyRow {
                             items(item.attachments) { path ->
                                 AsyncImage(

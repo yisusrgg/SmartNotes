@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class ItemViewModel : ViewModel() {
-    val items: StateFlow<List<Item>> = ItemRepository.items
+open class ItemViewModel : ViewModel() {
+    open val items: StateFlow<List<Item>> = ItemRepository.items
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun addItem(item: Item) {
@@ -19,7 +19,7 @@ class ItemViewModel : ViewModel() {
         }
     }
 
-    fun updateItem(item: Item) {
+    open fun updateItem(item: Item) {
         viewModelScope.launch {
             ItemRepository.updateItem(item)
         }
@@ -29,5 +29,9 @@ class ItemViewModel : ViewModel() {
         viewModelScope.launch {
             ItemRepository.removeItem(id)
         }
+    }
+
+    open fun getItemById(id: String): Item? {
+        TODO("Not yet implemented")
     }
 }

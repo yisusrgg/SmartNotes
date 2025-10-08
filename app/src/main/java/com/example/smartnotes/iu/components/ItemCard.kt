@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.smartnotes.data.Item
@@ -108,4 +109,44 @@ fun ItemCard(
             }
         }
     }
+}
+
+
+
+@Preview(showBackground = true)
+@Composable
+fun ItemCardPreview() {
+    val sampleTask = Item.Task(
+        title = "Hacer la compra de la semana",
+        description = "no se",
+        dateTimeText = "Mañana a las 10:00 AM",
+        completed = false,
+        attachments = listOf("lista_compra.pdf"), // Ejemplo con un adjunto
+        audios = listOf("recordatorio.mp3", "otro_audio.mp3") // Ejemplo con dos audios
+    )
+
+    ItemCard(
+        item = sampleTask,
+        onCheckedChange = {}, // En preview, no necesita hacer nada
+        onClick = {}          // En preview, no necesita hacer nada
+    )
+}
+
+
+
+@Preview(showBackground = true)
+@Composable
+fun NoteCardPreview() {
+    val sampleNote = Item.Note(
+        title = "Idea para nuevo proyecto",
+        description = "Investigar Firebase Realtime Database",
+        completed = true, // Ejemplo de una nota completada
+        attachments = emptyList(),
+        audios = emptyList()
+    )
+    ItemCard(
+        item = sampleNote,
+        onCheckedChange = {},
+        onClick = {}
+    )
 }
