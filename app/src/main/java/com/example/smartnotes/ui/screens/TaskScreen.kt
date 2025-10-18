@@ -1,4 +1,4 @@
-package com.example.smartnotes.iu.screens
+package com.example.smartnotes.ui.screens
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
@@ -15,8 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.smartnotes.data.Item
-import com.example.smartnotes.iu.components.ItemCard
-import com.example.smartnotes.viewmodel.ItemViewModel
+import com.example.smartnotes.ui.components.ItemCard
+import com.example.smartnotes.ui.viewmodels.ItemViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

@@ -1,4 +1,4 @@
-package com.example.smartnotes.iu.screens
+package com.example.smartnotes.ui.screens
 
 import android.media.MediaPlayer
 import android.net.Uri
@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.smartnotes.data.Item
 import com.example.smartnotes.data.ItemRepository
-import com.example.smartnotes.viewmodel.ItemViewModel
+import com.example.smartnotes.ui.viewmodels.ItemViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(

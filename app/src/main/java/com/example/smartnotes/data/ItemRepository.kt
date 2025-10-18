@@ -2,6 +2,7 @@ package com.example.smartnotes.data
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import com.example.smartnotes.data.Item
 
 object ItemRepository {
     private val _items = MutableStateFlow<List<Item>>(sampleItems())

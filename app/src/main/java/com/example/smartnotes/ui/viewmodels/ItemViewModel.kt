@@ -1,17 +1,17 @@
-package com.example.smartnotes.viewmodel
+package com.example.smartnotes.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.smartnotes.data.Item
-import com.example.smartnotes.data.ItemRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.example.smartnotes.data.Item
+import com.example.smartnotes.data.ItemRepository
 
 open class ItemViewModel : ViewModel() {
     open val items: StateFlow<List<Item>> = ItemRepository.items
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        .stateIn(viewModelScope, SharingStarted.Companion.Lazily, emptyList())
 
     fun addItem(item: Item) {
         viewModelScope.launch {

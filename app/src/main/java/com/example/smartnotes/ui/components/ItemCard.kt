@@ -1,4 +1,4 @@
-package com.example.smartnotes.iu.components
+package com.example.smartnotes.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

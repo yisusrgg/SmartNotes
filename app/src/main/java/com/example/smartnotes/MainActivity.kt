@@ -12,11 +12,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.smartnotes.iu.screens.AddEditItemScreen
-import com.example.smartnotes.iu.screens.DetailScreen
-import com.example.smartnotes.iu.screens.TasksScreen
+import com.example.smartnotes.ui.screens.AddEditItemScreen
+import com.example.smartnotes.ui.screens.DetailScreen
+import com.example.smartnotes.ui.screens.TasksScreen
 import com.example.smartnotes.ui.theme.SmartNotesTheme as MisTareasTheme
-import com.example.smartnotes.viewmodel.ItemViewModel
+import com.example.smartnotes.ui.viewmodels.ItemViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

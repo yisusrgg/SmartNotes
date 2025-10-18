@@ -1,8 +1,9 @@
-package com.example.smartnotes.iu.screens
+package com.example.smartnotes.ui.screens
 
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -21,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.smartnotes.data.Item
 import com.example.smartnotes.data.ItemRepository
-import com.example.smartnotes.viewmodel.ItemViewModel
+import com.example.smartnotes.ui.viewmodels.ItemViewModel
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -33,6 +34,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Alignment
 import coil.compose.AsyncImage
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,7 +66,7 @@ fun AddEditItemScreen(
     ) { bitmap ->
         bitmap?.let {
             val file = File(context.getExternalFilesDir(null), "img_${System.currentTimeMillis()}.jpg")
-            FileOutputStream(file).use { out -> bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out) }
+            FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out) }
             attachments = attachments + file.absolutePath
         }
     }
@@ -131,7 +133,7 @@ fun AddEditItemScreen(
         }
         mediaRecorder = null
         isRecording = false
-        val filePath = File(context.getExternalFilesDir(null), "audio_${SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(Date())}.mp3").absolutePath
+        val filePath = File(context.getExternalFilesDir(null), "audio_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.mp3").absolutePath
         // Nota: Ajusta path real del file grabado
         audios = audios + filePath
     }
