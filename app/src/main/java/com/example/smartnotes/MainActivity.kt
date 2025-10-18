@@ -15,8 +15,8 @@ import androidx.navigation.navArgument
 import com.example.smartnotes.ui.screens.AddEditItemScreen
 import com.example.smartnotes.ui.screens.DetailScreen
 import com.example.smartnotes.ui.screens.TasksScreen
-import com.example.smartnotes.ui.theme.SmartNotesTheme as MisTareasTheme
 import com.example.smartnotes.ui.viewmodels.ItemViewModel
+import com.example.smartnotes.ui.theme.SmartNotesTheme as MisTareasTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
