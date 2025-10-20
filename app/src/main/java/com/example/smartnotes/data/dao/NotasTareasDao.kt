@@ -29,4 +29,5 @@ interface NotasTareasDao {
 
     @Query("SELECT * from notasTareas WHERE tipo = :tipo ORDER BY fechaCumplimiento")
     fun getAllTareas(tipo: Int): Flow<NotasTareas>
+    
 }
