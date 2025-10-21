@@ -24,10 +24,11 @@ interface NotasTareasDao {
     @Query("SELECT * from notasTareas WHERE id = :id")
     fun getNotaTarea(id: Int): Flow<NotasTareas>
 
-    @Query("SELECT * from notasTareas WHERE tipo = :tipo ORDER BY fechaRegistro")
-    fun getAllNotas(tipo: Int): Flow<NotasTareas>
+    //traer todas las notas ornedas por fecha de registro
+    @Query("SELECT * from notasTareas WHERE tipo = 0 ORDER BY fechaRegistro")
+    fun getAllNotas(tipo: Int): Flow<List<NotasTareas>>
 
-    @Query("SELECT * from notasTareas WHERE tipo = :tipo ORDER BY fechaCumplimiento")
-    fun getAllTareas(tipo: Int): Flow<NotasTareas>
-    
+    //traer todas la tareas ordenas por fecha de cumplimiento
+    @Query("SELECT * from notasTareas WHERE tipo = 1 ORDER BY fechaCumplimiento")
+    fun getAllTareas(tipo: Int): Flow<List<NotasTareas>>
 }
