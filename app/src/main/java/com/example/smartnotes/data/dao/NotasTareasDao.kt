@@ -21,14 +21,15 @@ interface NotasTareasDao {
     @Delete
     suspend fun delete(notasTareas: NotasTareas)
 
+    //traer una nota o tarea en especifico
     @Query("SELECT * from notasTareas WHERE id = :id")
     fun getNotaTarea(id: Int): Flow<NotasTareas>
 
     //traer todas las notas ornedas por fecha de registro
     @Query("SELECT * from notasTareas WHERE tipo = 0 ORDER BY fechaRegistro")
-    fun getAllNotas(tipo: Int): Flow<List<NotasTareas>>
+    fun getAllNotas(): Flow<List<NotasTareas>>
 
     //traer todas la tareas ordenas por fecha de cumplimiento
     @Query("SELECT * from notasTareas WHERE tipo = 1 ORDER BY fechaCumplimiento")
-    fun getAllTareas(tipo: Int): Flow<List<NotasTareas>>
+    fun getAllTareas(): Flow<List<NotasTareas>>
 }

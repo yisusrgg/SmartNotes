@@ -20,6 +20,11 @@ interface RecordatoriosDao {
     @Delete
     suspend fun delete(recordatorio: Recordatorios)
 
+    //seleccionar todos los recordatorios de una tarea en especifico
+    @Query("SELECT * FROM recordatorios WHERE id=:tareaId")
+    fun getAllRecordatorios(tareaId: Int): Flow<List<Recordatorios>>
+
+    //seleccionar un recordatorio en especifico
     @Query("SELECT * FROM recordatorios WHERE id=:id")
-    fun getAllRecordatorios(id: Int): Flow<List<Recordatorios>>
+    fun getRecordatorio(id: Int): Flow<Recordatorios>
 }

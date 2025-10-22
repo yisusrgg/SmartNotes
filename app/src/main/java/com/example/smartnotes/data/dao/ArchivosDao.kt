@@ -20,10 +20,11 @@ interface ArchivosDao {
     @Delete
     suspend fun delete(archivos: ArchivosAdjuntos)
 
-    @Query("SELECT * FROM archivos")
-    fun getAllArchivos(): Flow<List<ArchivosAdjuntos>>
+    //traer un archivo en especifico
+    @Query("SELECT * FROM archivos WHERE id = :id")
+    fun getAllArchivos(id : Int): Flow<List<ArchivosAdjuntos>>
 
-    //todos los archivos de una nota o tarea
+    //tarer todos los archivos de una nota o tarea
     @Query("SELECT * FROM archivos WHERE id = :notaTareaId")
     fun getArchivoById(notaTareaId: Int): Flow<List<ArchivosAdjuntos>>
 }
