@@ -3,7 +3,7 @@ package com.example.smartnotes.data.repository
 import com.example.smartnotes.data.entities.Recordatorios
 import kotlinx.coroutines.flow.Flow
 
-interface RecordtoriosRepository {
+interface RecordatoriosRepository {
     /**Retrieve all the recordatorios from the the given data source with the [id]*/
     fun getAllRecordatoriosStream(tareaId: Int): Flow<List<Recordatorios>>
 
