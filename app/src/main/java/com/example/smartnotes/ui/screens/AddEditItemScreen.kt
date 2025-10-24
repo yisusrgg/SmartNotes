@@ -1,36 +1,30 @@
 package com.example.smartnotes.ui.screens
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
+import coil.compose.AsyncImage
+import com.example.smartnotes.R
 import com.example.smartnotes.data.Item
 import com.example.smartnotes.data.ItemRepository
+import com.example.smartnotes.ui.theme.SmartNotesTheme
 import com.example.smartnotes.ui.viewmodels.ItemViewModel
 import java.io.File
 import java.io.FileOutputStream
-import android.media.MediaRecorder
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.window.Dialog
-import coil.compose.AsyncImage
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -41,7 +35,7 @@ fun AddEditItemScreen(
     type: String,
     editItemId: String? = null,
     onDone: () -> Unit,
-    onBack: () -> Unit 
+    onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val editingItem = editItemId?.let { id -> ItemRepository.getItemById(id) }
@@ -49,85 +43,91 @@ fun AddEditItemScreen(
     var title by remember { mutableStateOf(editingItem?.title ?: "") }
     var description by remember { mutableStateOf(editingItem?.description ?: "") }
     var dateTimeText by remember { mutableStateOf((editingItem as? Item.Task)?.dateTimeText ?: "") }
-    var reminderText by remember { mutableStateOf((editingItem as? Item.Task)?.reminderText ?: "1 día antes") }
 
     val isTask = type == "task" || editingItem is Item.Task
-    val titleBar = if (editItemId != null) "Editar ${if (isTask) "tarea" else "nota"}" else "Nueva ${if (isTask) "tarea" else "nota"}"
 
-    // Estado para el menú desplegable de recordatorio
-    val reminderOptions = listOf("No recordar", "Al momento", "5 minutos antes", "10 minutos antes", "30 minutos antes", "1 hora antes", "1 día antes")
+    val reminderOptions = listOf(
+        stringResource(R.string.reminder_none),
+        stringResource(R.string.reminder_on_time),
+        stringResource(R.string.reminder_5_min),
+        stringResource(R.string.reminder_10_min),
+        stringResource(R.string.reminder_30_min),
+        stringResource(R.string.reminder_1_hour),
+        stringResource(R.string.reminder_1_day)
+    )
+    var reminderText by remember { mutableStateOf((editingItem as? Item.Task)?.reminderText ?: reminderOptions[6]) }
     var isReminderExpanded by remember { mutableStateOf(false) }
 
-    // Estado para los selectores de fecha y hora
-    val calendar = Calendar.getInstance()
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
-    val timePickerState = rememberTimePickerState(
-        initialHour = calendar.get(Calendar.HOUR_OF_DAY),
-        initialMinute = calendar.get(Calendar.MINUTE),
-        is24Hour = true
-    )
+    val timePickerState = rememberTimePickerState()
 
-    // Estado para multimedia
     var attachments by remember { mutableStateOf(editingItem?.attachments ?: emptyList()) }
     var audios by remember { mutableStateOf(editingItem?.audios ?: emptyList()) }
 
-    // Launcher para cámara
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap ->
         bitmap?.let {
             val file = File(context.getExternalFilesDir(null), "img_${System.currentTimeMillis()}.jpg")
-            FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out) }
+            FileOutputStream(file).use { out -> bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out) }
             attachments = attachments + file.absolutePath
         }
+    }
+
+    fun handleSave(completed: Boolean = false) {
+        if (title.isBlank()) return
+        val newItem = if (isTask) {
+            Item.Task(
+                id = editingItem?.id ?: UUID.randomUUID().toString(),
+                title = title,
+                description = description,
+                dateTimeText = dateTimeText.ifBlank { "Sin fecha" },
+                reminderText = reminderText,
+                attachments = attachments,
+                audios = audios,
+                completed = completed || (editingItem as? Item.Task)?.completed ?: false
+            )
+        } else {
+            Item.Note(
+                id = editingItem?.id ?: UUID.randomUUID().toString(),
+                title = title,
+                description = description,
+                attachments = attachments,
+                audios = audios
+            )
+        }
+        if (editItemId != null) {
+            viewModel.updateItem(newItem)
+        } else {
+            viewModel.addItem(newItem)
+        }
+        onDone()
+    }
+    val titleBar = if (editItemId != null) {
+        if (isTask) stringResource(R.string.edit_task_title) else stringResource(R.string.edit_note_title)
+    } else {
+        if (isTask) stringResource(R.string.new_task_title) else stringResource(R.string.new_note_title)
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(titleBar) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary
+                ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retroceder")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button_description))
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = {
-                            if (title.isBlank()) return@IconButton
-                            val newItem = if (isTask) {
-                                Item.Task(
-                                    id = editingItem?.id ?: UUID.randomUUID().toString(),
-                                    title = title,
-                                    description = description,
-                                    dateTimeText = dateTimeText.ifBlank { "Sin fecha" },
-                                    reminderText = reminderText,
-                                    attachments = attachments,
-                                    audios = audios,
-                                    completed = (editingItem as? Item.Task)?.completed ?: false
-                                )
-                            } else {
-                                Item.Note(
-                                    id = editingItem?.id ?: UUID.randomUUID().toString(),
-                                    title = title,
-                                    description = description,
-                                    attachments = attachments,
-                                    audios = audios
-                                )
-                            }
-                            if (editItemId != null) {
-                                viewModel.updateItem(newItem)
-                            } else {
-                                viewModel.addItem(newItem)
-                            }
-                            onDone()
-                        },
-                        enabled = title.isNotBlank()
-                    ) {
-                        Icon(Icons.Default.Save, contentDescription = "Guardar")
+                    IconButton(onClick = { handleSave() }, enabled = title.isNotBlank()) {
+                        Icon(Icons.Default.Save, contentDescription = stringResource(R.string.save_button_description))
                     }
                 }
             )
@@ -142,36 +142,30 @@ fun AddEditItemScreen(
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Título") },
+                label = { Text(stringResource(R.string.title_label)) },
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Descripción") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
+                label = { Text(stringResource(R.string.description_label)) },
+                modifier = Modifier.fillMaxWidth().height(120.dp),
                 maxLines = 5
             )
             if (isTask) {
                 Spacer(modifier = Modifier.height(12.dp))
-
-                // --- Campo de Fecha / Hora ---
                 Box {
                     OutlinedTextField(
                         value = dateTimeText,
                         onValueChange = {},
-                        label = { Text("Fecha / Hora") },
+                        label = { Text(stringResource(R.string.date_time_label)) },
                         modifier = Modifier.fillMaxWidth(),
                         readOnly = true
                     )
                     Box(modifier = Modifier.matchParentSize().clickable { showDatePicker = true })
                 }
-
                 Spacer(modifier = Modifier.height(12.dp))
-
                 ExposedDropdownMenuBox(
                     expanded = isReminderExpanded,
                     onExpandedChange = { isReminderExpanded = !isReminderExpanded }
@@ -179,7 +173,7 @@ fun AddEditItemScreen(
                     OutlinedTextField(
                         value = reminderText,
                         onValueChange = {},
-                        label = { Text("Recordatorio") },
+                        label = { Text(stringResource(R.string.reminder_label)) },
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isReminderExpanded) },
                         modifier = Modifier.fillMaxWidth().menuAnchor()
@@ -202,35 +196,27 @@ fun AddEditItemScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Adjuntos:", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.attachments_label), style = MaterialTheme.typography.titleMedium)
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 IconButton(onClick = { cameraLauncher.launch(null) }) {
-                    Icon(Icons.Default.PhotoCamera, contentDescription = "Tomar foto")
+                    Icon(Icons.Default.PhotoCamera, contentDescription = stringResource(R.string.take_photo_description))
                 }
-                IconButton(onClick = { /* galleryLauncher.launch("image/*") */ }) {
-                    Icon(Icons.Default.AttachFile, contentDescription = "Seleccionar imagen/archivo")
+                IconButton(onClick = { /* TODO */ }) {
+                    Icon(Icons.Default.AttachFile, contentDescription = stringResource(R.string.select_file_description))
                 }
-                IconButton(onClick = { /* if (isRecording) stopRecording() else startRecording() */ }) {
-                    Icon(Icons.Default.Mic, contentDescription = "Grabar audio")
-                    // if (isRecording) Text("⏹️", Modifier.padding(top = 4.dp))
-                }
-                IconButton(onClick = { /* filePickerLauncher.launch("*/*") */ }) {
-                    Icon(Icons.Default.AttachFile, contentDescription = "Archivo")
+                IconButton(onClick = { /* TODO */ }) {
+                    Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.record_audio_description))
                 }
             }
 
             if (attachments.isNotEmpty()) {
                 LazyRow(modifier = Modifier.fillMaxWidth()) {
                     items(attachments) { path ->
-                        AsyncImage(
-                            model = path,
-                            contentDescription = null,
-                            modifier = Modifier.size(60.dp).padding(4.dp)
-                        )
+                        AsyncImage(model = path, contentDescription = null, modifier = Modifier.size(60.dp).padding(4.dp))
                     }
                 }
             }
@@ -244,6 +230,32 @@ fun AddEditItemScreen(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            if (isTask) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Button(
+                        onClick = { handleSave(completed = true) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Filled.Check, contentDescription = null)
+                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        Text(stringResource(R.string.complete_button))
+                    }
+                    OutlinedButton(
+                        onClick = { showDatePicker = true },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Filled.Schedule, contentDescription = null)
+                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        Text(stringResource(R.string.postpone_button))
+                    }
+                }
+            }
         }
     }
 
@@ -253,11 +265,11 @@ fun AddEditItemScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDatePicker = false
-                    showTimePicker = true // Muestra el selector de hora después de confirmar la fecha
-                }) { Text("Aceptar") }
+                    showTimePicker = true
+                }) { Text(stringResource(R.string.accept_button)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel_button)) }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -265,8 +277,12 @@ fun AddEditItemScreen(
     }
 
     if (showTimePicker) {
-        TimePickerDialog(
+        AlertDialog(
             onDismissRequest = { showTimePicker = false },
+            title = { Text(stringResource(R.string.select_time_title)) },
+            text = {
+                TimePicker(state = timePickerState)
+            },
             confirmButton = {
                 TextButton(onClick = {
                     showTimePicker = false
@@ -279,57 +295,26 @@ fun AddEditItemScreen(
                         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
                         dateTimeText = sdf.format(selectedCalendar.time)
                     }
-                }) { Text("Aceptar") }
+                }) { Text(stringResource(R.string.accept_button)) }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("Cancelar") }
+                TextButton(onClick = { showTimePicker = false }) { Text(stringResource(R.string.cancel_button)) }
             }
-        ) {
-            TimePicker(state = timePickerState)
-        }
+        )
     }
 }
 
-
+@Preview(showBackground = true)
+@Preview(showBackground = true, locale = "en")
 @Composable
-fun TimePickerDialog(
-    title: String = "Select Time",
-    onDismissRequest: () -> Unit,
-    confirmButton: @Composable () -> Unit,
-    dismissButton: @Composable (() -> Unit)? = null,
-    content: @Composable () -> Unit,
-) {
-    Dialog(onDismissRequest = onDismissRequest) {
-        Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = 6.dp,
-            modifier = Modifier
-                .width(IntrinsicSize.Min)
-                .height(IntrinsicSize.Min)
-                .wrapContentHeight()
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 20.dp),
-                    text = title,
-                    style = MaterialTheme.typography.labelMedium
-                )
-                content()
-                Row(
-                    modifier = Modifier
-                        .height(40.dp)
-                        .fillMaxWidth()
-                ) {
-                    Spacer(modifier = Modifier.weight(1f))
-                    dismissButton?.invoke()
-                    confirmButton()
-                }
-            }
-        }
+fun AddEditScreenPreview() {
+    val context = LocalContext.current
+    SmartNotesTheme {
+        AddEditItemScreen(
+            viewModel = ItemViewModel(),
+            type = "task",
+            onDone = {},
+            onBack = {}
+        )
     }
 }

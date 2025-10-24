@@ -1,3 +1,47 @@
 <resources>
     <string name="app_name">SmartNotes</string>
+
+    <!-- TasksScreen -->
+    <string name="tasks_title">SmartNotes</string>
+    <string name="tasks_tab">Tareas</string>
+    <string name="notes_tab">Notas</string>
+    <string name="search_placeholder">Buscar</string>
+    <string name="add_button_description">Agregar</string>
+    <string name="empty_list_message">No hay elementos aún. ¡Agrega uno!</string>
+
+    <!-- AddEditItemScreen -->
+    <string name="edit_task_title">Editar tarea</string>
+    <string name="edit_note_title">Editar nota</string>
+    <string name="new_task_title">Nueva tarea</string>
+    <string name="new_note_title">Nueva nota</string>
+    <string name="title_label">Título</string>
+    <string name="description_label">Descripción</string>
+    <string name="date_time_label">Fecha / Hora</string>
+    <string name="reminder_label">Recordatorio</string>
+    <string name="attachments_label">Adjuntos</string>
+    <string name="save_button_description">Guardar</string>
+    <string name="back_button_description">Retroceder</string>
+    <string name="take_photo_description">Tomar foto</string>
+    <string name="select_file_description">Seleccionar imagen/archivo</string>
+    <string name="record_audio_description">Grabar audio</string>
+    <string name="accept_button">Aceptar</string>
+    <string name="cancel_button">Cancelar</string>
+    <string name="select_time_title">Seleccionar hora</string>
+    <string name="complete_button">Completar</string>
+    <string name="postpone_button">Postergar</string>
+
+    <!-- DetailScreen -->
+    <string name="date_label">Fecha</string>
+    <string name="reminder_detail_label">Recordatorio</string>
+    <string name="play_audio_description">Reproducir</string>
+
+    <!-- Reminder Options -->
+    <string name="reminder_none">No recordar</string>
+    <string name="reminder_on_time">Al momento</string>
+    <string name="reminder_5_min">5 minutos antes</string>
+    <string name="reminder_10_min">10 minutos antes</string>
+    <string name="reminder_30_min">30 minutos antes</string>
+    <string name="reminder_1_hour">1 hora antes</string>
+    <string name="reminder_1_day">1 día antes</string>
+
 </resources>

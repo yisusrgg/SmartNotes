@@ -15,9 +15,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.smartnotes.R
 import com.example.smartnotes.data.Item
 import com.example.smartnotes.ui.viewmodels.ItemViewModel
 import java.text.SimpleDateFormat
@@ -53,7 +55,7 @@ fun DetailScreen(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back_button_description))
                     }
                 }
             )
@@ -79,8 +81,8 @@ fun DetailScreen(
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     if (isTask && item is Item.Task) {
-                        Text("Fecha: ${item.dateTimeText}", style = MaterialTheme.typography.bodySmall)
-                        Text("Recordatorio: ${item.reminderText}", style = MaterialTheme.typography.bodySmall)
+                        Text("${stringResource(R.string.date_label)}: ${item.dateTimeText}", style = MaterialTheme.typography.bodySmall)
+                        Text("${stringResource(R.string.reminder_detail_label)}: ${item.reminderText}", style = MaterialTheme.typography.bodySmall)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
@@ -90,7 +92,7 @@ fun DetailScreen(
 
                     if (item.attachments.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(10.dp))
-                        Text("Adjuntos:", style = MaterialTheme.typography.bodyLarge)
+                        Text("${stringResource(R.string.attachments_label)}:", style = MaterialTheme.typography.bodyLarge)
                         LazyRow {
                             items(item.attachments) { path ->
                                 AsyncImage(model = path, contentDescription = null, modifier = Modifier.size(100.dp).padding(4.dp))
@@ -107,7 +109,7 @@ fun DetailScreen(
                                         mediaPlayer?.release()
                                         mediaPlayer = MediaPlayer.create(context, Uri.parse(path)).apply { start() }
                                     }) {
-                                        Icon(Icons.Default.PlayArrow, contentDescription = "Reproducir")
+                                        Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.play_audio_description))
                                     }
                                     Text(path.substringAfterLast("/"), style = MaterialTheme.typography.bodySmall)
                                 }
@@ -134,7 +136,7 @@ fun DetailScreen(
                     ) {
                         Icon(Icons.Default.Check, contentDescription = null)
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Completar")
+                        Text(stringResource(R.string.complete_button))
                     }
                     OutlinedButton(
                         onClick = { showDatePicker = true },
@@ -142,7 +144,7 @@ fun DetailScreen(
                     ) {
                         Icon(Icons.Default.Schedule, contentDescription = null)
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Postergar")
+                        Text(stringResource(R.string.postpone_button))
                     }
                 }
             }
@@ -155,10 +157,10 @@ fun DetailScreen(
                     TextButton(onClick = {
                         showDatePicker = false
                         showTimePicker = true
-                    }) { Text("Aceptar") }
+                    }) { Text(stringResource(R.string.accept_button)) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+                    TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel_button)) }
                 }
             ) {
                 DatePicker(state = datePickerState)
@@ -168,7 +170,7 @@ fun DetailScreen(
         if (showTimePicker) {
             AlertDialog(
                 onDismissRequest = { showTimePicker = false },
-                title = { Text("Seleccionar hora") },
+                title = { Text(stringResource(R.string.select_time_title)) },
                 text = { TimePicker(state = timePickerState) },
                 confirmButton = {
                     TextButton(onClick = {
@@ -185,10 +187,10 @@ fun DetailScreen(
                             val updated = (item as Item.Task).copy(dateTimeText = newDateTimeText)
                             viewModel.updateItem(updated)
                         }
-                    }) { Text("Aceptar") }
+                    }) { Text(stringResource(R.string.accept_button)) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showTimePicker = false }) { Text("Cancelar") }
+                    TextButton(onClick = { showTimePicker = false }) { Text(stringResource(R.string.cancel_button)) }
                 }
             )
         }

@@ -11,7 +11,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.smartnotes.R
 import com.example.smartnotes.data.Item
 import com.example.smartnotes.ui.components.ItemCard
 import com.example.smartnotes.ui.viewmodels.ItemViewModel
@@ -24,7 +27,7 @@ fun TasksScreen(
     onDetailClick: (String) -> Unit
 ) {
     val items by viewModel.items.collectAsState()
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableStateOf(0) } //0:Tareas, 1:Notas
     var searchQuery by remember { mutableStateOf("") }
 
     val filteredItems = remember(items, selectedTab, searchQuery) {
@@ -39,7 +42,7 @@ fun TasksScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("SmartNotes") },
+                title = { Text(stringResource(R.string.tasks_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.primary
@@ -57,13 +60,13 @@ fun TasksScreen(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 }
                 ) {
-                    Text("Tareas", modifier = Modifier.padding(8.dp))
+                    Text(stringResource(R.string.tasks_tab), modifier = Modifier.padding(8.dp))
                 }
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 }
                 ) {
-                    Text("Notas", modifier = Modifier.padding(8.dp))
+                    Text(stringResource(R.string.notes_tab), modifier = Modifier.padding(8.dp))
                 }
             }
 
@@ -72,7 +75,7 @@ fun TasksScreen(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No hay elementos aún. ¡Agrega uno!")
+                    Text(stringResource(R.string.empty_list_message))
                 }
             } else {
                 LazyColumn(
@@ -94,6 +97,7 @@ fun TasksScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .background(Color.Transparent) // <-- Color corregido
                     .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -101,8 +105,8 @@ fun TasksScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    label = { Text("Buscar") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
+                    label = { Text(stringResource(R.string.search_placeholder)) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.search_placeholder)) },
                     modifier = Modifier.weight(1f)
                 )
                 FloatingActionButton(
@@ -111,7 +115,7 @@ fun TasksScreen(
                         onAddClick(type)
                     }
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Agregar")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_button_description))
                 }
             }
         }

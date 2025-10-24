@@ -1,0 +1,47 @@
+<resources>
+    <string name="app_name">SmartNotes</string>
+
+    <!-- TasksScreen -->
+    <string name="tasks_title">SmartNotes</string>
+    <string name="tasks_tab">Tasks</string>
+    <string name="notes_tab">Notes</string>
+    <string name="search_placeholder">Search</string>
+    <string name="add_button_description">Add</string>
+    <string name="empty_list_message">No items yet. Add one!</string>
+
+    <!-- AddEditItemScreen -->
+    <string name="edit_task_title">Edit Task</string>
+    <string name="edit_note_title">Edit Note</string>
+    <string name="new_task_title">New Task</string>
+    <string name="new_note_title">New Note</string>
+    <string name="title_label">Title</string>
+    <string name="description_label">Description</string>
+    <string name="date_time_label">Date / Time</string>
+    <string name="reminder_label">Reminder</string>
+    <string name="attachments_label">Attachments</string>
+    <string name="save_button_description">Save</string>
+    <string name="back_button_description">Back</string>
+    <string name="take_photo_description">Take Photo</string>
+    <string name="select_file_description">Select Image/File</string>
+    <string name="record_audio_description">Record Audio</string>
+    <string name="accept_button">OK</string>
+    <string name="cancel_button">Cancel</string>
+    <string name="select_time_title">Select Time</string>
+    <string name="complete_button">Complete</string>
+    <string name="postpone_button">Postpone</string>
+
+    <!-- DetailScreen -->
+    <string name="date_label">Date</string>
+    <string name="reminder_detail_label">Reminder</string>
+    <string name="play_audio_description">Play</string>
+
+    <!-- Reminder Options -->
+    <string name="reminder_none">No reminder</string>
+    <string name="reminder_on_time">At time of event</string>
+    <string name="reminder_5_min">5 minutes before</string>
+    <string name="reminder_10_min">10 minutes before</string>
+    <string name="reminder_30_min">30 minutes before</string>
+    <string name="reminder_1_hour">1 hour before</string>
+    <string name="reminder_1_day">1 day before</string>
+
+</resources>
