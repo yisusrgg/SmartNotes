@@ -6,7 +6,6 @@ sealed class Item {
     abstract val id: String
     abstract val title: String
     abstract val description: String
-    abstract val completed: Boolean
     abstract val attachments: List<String>
     abstract val audios: List<String>
 
@@ -15,7 +14,7 @@ sealed class Item {
         override var title: String,
         override var description: String,
         var dateTimeText: String,
-        override var completed: Boolean = false,
+        var completed: Boolean = false,
         override val attachments: List<String> = emptyList(),
         override val audios: List<String> = emptyList(),
         var reminderText: String = "1 día antes"
@@ -25,7 +24,6 @@ sealed class Item {
         override val id: String = UUID.randomUUID().toString(),
         override var title: String,
         override var description: String,
-        override var completed: Boolean = false,
         override val attachments: List<String> = emptyList(),
         override val audios: List<String> = emptyList()
     ) : Item()

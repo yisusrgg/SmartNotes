@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -19,8 +20,12 @@ import com.example.smartnotes.data.Item
 fun ItemCard(
     item: Item,
     onCheckedChange: (Item) -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: () -> Unit
 ) {
+    val isTask = item is Item.Task
+    val isCompleted = if (isTask) (item as Item.Task).completed else false
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -28,23 +33,21 @@ fun ItemCard(
             .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (item.completed) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
+            containerColor = if (isCompleted) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
         )
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(12.dp)
         ) {
-            Checkbox(
-                checked = item.completed,
-                onCheckedChange = {
-                    val updated = when (item) {
-                        is Item.Task -> item.copy(completed = it)
-                        is Item.Note -> item.copy(completed = it)
+            if (isTask) {
+                Checkbox(
+                    checked = isCompleted,
+                    onCheckedChange = {
+                        onCheckedChange((item as Item.Task).copy(completed = it))
                     }
-                    onCheckedChange(updated)
-                }
-            )
+                )
+            }
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -53,10 +56,10 @@ fun ItemCard(
                 Text(
                     text = item.title,
                     maxLines = 2,
-                    style = if (item.completed) MaterialTheme.typography.bodyMedium.copy(
+                    style = if (isCompleted) MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     ) else MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (item.completed) FontWeight.Normal else FontWeight.Bold
+                    fontWeight = if (isCompleted) FontWeight.Normal else FontWeight.Bold
                 )
                 if (item is Item.Task) {
                     Spacer(modifier = Modifier.height(4.dp))
@@ -106,12 +109,13 @@ fun ItemCard(
                         )
                     }
                 }
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, contentDescription = "Borrar")
+                }
             }
         }
     }
 }
-
-
 
 @Preview(showBackground = true)
 @Composable
@@ -128,11 +132,10 @@ fun ItemCardPreview() {
     ItemCard(
         item = sampleTask,
         onCheckedChange = {}, // En preview, no necesita hacer nada
-        onClick = {}          // En preview, no necesita hacer nada
+        onClick = {},          // En preview, no necesita hacer nada
+        onDelete = {}
     )
 }
-
-
 
 @Preview(showBackground = true)
 @Composable
@@ -140,13 +143,13 @@ fun NoteCardPreview() {
     val sampleNote = Item.Note(
         title = "Idea para nuevo proyecto",
         description = "Investigar Firebase Realtime Database",
-        completed = true, // Ejemplo de una nota completada
         attachments = emptyList(),
         audios = emptyList()
     )
     ItemCard(
         item = sampleNote,
         onCheckedChange = {},
-        onClick = {}
+        onClick = {},
+        onDelete = {}
     )
 }

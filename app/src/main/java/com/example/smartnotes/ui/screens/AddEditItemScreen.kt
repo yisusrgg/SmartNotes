@@ -1,15 +1,15 @@
 package com.example.smartnotes.ui.screens
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -25,16 +25,14 @@ import com.example.smartnotes.data.ItemRepository
 import com.example.smartnotes.ui.viewmodels.ItemViewModel
 import java.io.File
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.Date
 import android.media.MediaRecorder
-import android.os.Environment
-import androidx.activity.result.ActivityResult
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
-import java.util.Locale
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,10 +40,10 @@ fun AddEditItemScreen(
     viewModel: ItemViewModel,
     type: String,
     editItemId: String? = null,
-    onDone: () -> Unit
+    onDone: () -> Unit,
+    onBack: () -> Unit 
 ) {
     val context = LocalContext.current
-    val items by viewModel.items.collectAsState()
     val editingItem = editItemId?.let { id -> ItemRepository.getItemById(id) }
 
     var title by remember { mutableStateOf(editingItem?.title ?: "") }
@@ -55,6 +53,22 @@ fun AddEditItemScreen(
 
     val isTask = type == "task" || editingItem is Item.Task
     val titleBar = if (editItemId != null) "Editar ${if (isTask) "tarea" else "nota"}" else "Nueva ${if (isTask) "tarea" else "nota"}"
+
+    // Estado para el menú desplegable de recordatorio
+    val reminderOptions = listOf("No recordar", "Al momento", "5 minutos antes", "10 minutos antes", "30 minutos antes", "1 hora antes", "1 día antes")
+    var isReminderExpanded by remember { mutableStateOf(false) }
+
+    // Estado para los selectores de fecha y hora
+    val calendar = Calendar.getInstance()
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
+    val timePickerState = rememberTimePickerState(
+        initialHour = calendar.get(Calendar.HOUR_OF_DAY),
+        initialMinute = calendar.get(Calendar.MINUTE),
+        is24Hour = true
+    )
 
     // Estado para multimedia
     var attachments by remember { mutableStateOf(editingItem?.attachments ?: emptyList()) }
@@ -71,100 +85,37 @@ fun AddEditItemScreen(
         }
     }
 
-    // Launcher para galería
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { attachments = attachments + uri.toString() }
-    }
-
-    // Launcher para grabar audio
-    var isRecording by remember { mutableStateOf(false) }
-    var mediaRecorder: MediaRecorder? by remember { mutableStateOf(null) }
-    val audioLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { _ -> } // No usado directamente
-
-    // Launcher para picker de archivos
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { attachments = attachments + uri.toString() } // Trata como attachment genérico
-    }
-
-    // Permisos
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        // Maneja grants/denials si necesitas
-    }
-
-    LaunchedEffect(Unit) {
-        val permissions = mutableListOf<String>()
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.CAMERA)
-        }
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.RECORD_AUDIO)
-        }
-        if (permissions.isNotEmpty()) {
-            permissionLauncher.launch(permissions.toTypedArray())
-        }
-    }
-
-    // Función para grabar audio
-    fun startRecording() {
-        val file = File(context.getExternalFilesDir(null), "audio_${System.currentTimeMillis()}.mp3")
-        mediaRecorder = MediaRecorder().apply {
-            setAudioSource(MediaRecorder.AudioSource.MIC)
-            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-            setOutputFile(file.absolutePath)
-            prepare()
-            start()
-        }
-        isRecording = true
-    }
-
-    fun stopRecording() {
-        mediaRecorder?.apply {
-            stop()
-            release()
-        }
-        mediaRecorder = null
-        isRecording = false
-        val filePath = File(context.getExternalFilesDir(null), "audio_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.mp3").absolutePath
-        // Nota: Ajusta path real del file grabado
-        audios = audios + filePath
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(titleBar) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retroceder")
+                    }
+                },
                 actions = {
                     IconButton(
                         onClick = {
                             if (title.isBlank()) return@IconButton
                             val newItem = if (isTask) {
                                 Item.Task(
-                                    id = editingItem?.id ?: "",
+                                    id = editingItem?.id ?: UUID.randomUUID().toString(),
                                     title = title,
                                     description = description,
                                     dateTimeText = dateTimeText.ifBlank { "Sin fecha" },
                                     reminderText = reminderText,
                                     attachments = attachments,
                                     audios = audios,
-                                    completed = editingItem?.completed ?: false
+                                    completed = (editingItem as? Item.Task)?.completed ?: false
                                 )
                             } else {
                                 Item.Note(
-                                    id = editingItem?.id ?: "",
+                                    id = editingItem?.id ?: UUID.randomUUID().toString(),
                                     title = title,
                                     description = description,
                                     attachments = attachments,
-                                    audios = audios,
-                                    completed = editingItem?.completed ?: false
+                                    audios = audios
                                 )
                             }
                             if (editItemId != null) {
@@ -206,19 +157,48 @@ fun AddEditItemScreen(
             )
             if (isTask) {
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = dateTimeText,
-                    onValueChange = { dateTimeText = it },
-                    label = { Text("Fecha / Hora") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+
+                // --- Campo de Fecha / Hora ---
+                Box {
+                    OutlinedTextField(
+                        value = dateTimeText,
+                        onValueChange = {},
+                        label = { Text("Fecha / Hora") },
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = true
+                    )
+                    Box(modifier = Modifier.matchParentSize().clickable { showDatePicker = true })
+                }
+
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = reminderText,
-                    onValueChange = { reminderText = it },
-                    label = { Text("Recordatorio") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+
+                ExposedDropdownMenuBox(
+                    expanded = isReminderExpanded,
+                    onExpandedChange = { isReminderExpanded = !isReminderExpanded }
+                ) {
+                    OutlinedTextField(
+                        value = reminderText,
+                        onValueChange = {},
+                        label = { Text("Recordatorio") },
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isReminderExpanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = isReminderExpanded,
+                        onDismissRequest = { isReminderExpanded = false }
+                    ) {
+                        reminderOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    reminderText = option
+                                    isReminderExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -228,35 +208,28 @@ fun AddEditItemScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Botón Cámara
                 IconButton(onClick = { cameraLauncher.launch(null) }) {
                     Icon(Icons.Default.PhotoCamera, contentDescription = "Tomar foto")
                 }
-                // Botón Galería (para attachments genéricos)
-                IconButton(onClick = { galleryLauncher.launch("image/*") }) {
+                IconButton(onClick = { /* galleryLauncher.launch("image/*") */ }) {
                     Icon(Icons.Default.AttachFile, contentDescription = "Seleccionar imagen/archivo")
                 }
-                // Botón Micrófono
-                IconButton(onClick = { if (isRecording) stopRecording() else startRecording() }) {
+                IconButton(onClick = { /* if (isRecording) stopRecording() else startRecording() */ }) {
                     Icon(Icons.Default.Mic, contentDescription = "Grabar audio")
-                    if (isRecording) Text("⏹️", Modifier.padding(top = 4.dp))
+                    // if (isRecording) Text("⏹️", Modifier.padding(top = 4.dp))
                 }
-                // Botón Archivo
-                IconButton(onClick = { filePickerLauncher.launch("*/*") }) {
+                IconButton(onClick = { /* filePickerLauncher.launch("*/*") */ }) {
                     Icon(Icons.Default.AttachFile, contentDescription = "Archivo")
                 }
             }
 
-            // Lista de attachments actuales (previews simples)
             if (attachments.isNotEmpty()) {
                 LazyRow(modifier = Modifier.fillMaxWidth()) {
                     items(attachments) { path ->
                         AsyncImage(
                             model = path,
                             contentDescription = null,
-                            modifier = Modifier
-                                .size(60.dp)
-                                .padding(4.dp)
+                            modifier = Modifier.size(60.dp).padding(4.dp)
                         )
                     }
                 }
@@ -269,6 +242,92 @@ fun AddEditItemScreen(
                             Text(path.substringAfterLast("/"), style = MaterialTheme.typography.bodySmall)
                         }
                     }
+                }
+            }
+        }
+    }
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDatePicker = false
+                    showTimePicker = true // Muestra el selector de hora después de confirmar la fecha
+                }) { Text("Aceptar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showTimePicker) {
+        TimePickerDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showTimePicker = false
+                    datePickerState.selectedDateMillis?.let { selectedDateMillis ->
+                        val selectedCalendar = Calendar.getInstance().apply {
+                            timeInMillis = selectedDateMillis
+                            set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                            set(Calendar.MINUTE, timePickerState.minute)
+                        }
+                        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                        dateTimeText = sdf.format(selectedCalendar.time)
+                    }
+                }) { Text("Aceptar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("Cancelar") }
+            }
+        ) {
+            TimePicker(state = timePickerState)
+        }
+    }
+}
+
+
+@Composable
+fun TimePickerDialog(
+    title: String = "Select Time",
+    onDismissRequest: () -> Unit,
+    confirmButton: @Composable () -> Unit,
+    dismissButton: @Composable (() -> Unit)? = null,
+    content: @Composable () -> Unit,
+) {
+    Dialog(onDismissRequest = onDismissRequest) {
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            tonalElevation = 6.dp,
+            modifier = Modifier
+                .width(IntrinsicSize.Min)
+                .height(IntrinsicSize.Min)
+                .wrapContentHeight()
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 20.dp),
+                    text = title,
+                    style = MaterialTheme.typography.labelMedium
+                )
+                content()
+                Row(
+                    modifier = Modifier
+                        .height(40.dp)
+                        .fillMaxWidth()
+                ) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    dismissButton?.invoke()
+                    confirmButton()
                 }
             }
         }

@@ -44,7 +44,8 @@ fun SmartNotesNavHost(navController: NavHostController) {
             AddEditItemScreen(
                 viewModel = vm,
                 type = type,
-                onDone = { navController.popBackStack() }
+                onDone = { navController.popBackStack() },
+                onBack = { navController.popBackStack() } // Aquí se pasa la acción de retroceso
             )
         }
 
