@@ -41,9 +41,6 @@ abstract class SmartNotesDatabase: RoomDatabase() {
 
 val MIGRATION_1_2 = object : Migration(1, 2) { // De la versión 1 a la versión 2
     override fun migrate(db: SupportSQLiteDatabase) {
-        // Añadir la nueva columna 'opcion' a la tabla 'recordatorios'.
-        // Debe ser consistente con el tipo en Kotlin (Int -> INTEGER)
-        // Usamos DEFAULT 0 porque tu campo Kotlin tiene un valor por defecto (Int).
         db.execSQL(
             "ALTER TABLE recordatorios ADD COLUMN opcion INTEGER NOT NULL DEFAULT 0"
         )

@@ -30,6 +30,7 @@
     <string name="complete_button">Complete</string>
     <string name="postpone_button">Postpone</string>
     <string name="no_date_time">Select date and time</string>
+    <string name="edit_button_description">Edit</string>
 
     <!-- DetailScreen -->
     <string name="date_label">Date</string>
@@ -44,5 +45,6 @@
     <string name="reminder_30_min">30 minutes before</string>
     <string name="reminder_1_hour">1 hour before</string>
     <string name="reminder_1_day">1 day before</string>
+
 
 </resources>

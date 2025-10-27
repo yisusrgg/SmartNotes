@@ -1,6 +1,7 @@
 package com.example.smartnotes.ui
 
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -38,6 +39,16 @@ object AppViewModelProvider {
                 recordatorioRepository = container.recordatoriosRepository
             )
         }
+
+        /*initializer {
+            val container = smartNotesApplication().container
+            EditNoteTaskViewModel(
+                savedStateHandle = this.createSavedStateHandle(), // Para el ID
+                notasTareasRepository = container.notasTareasRepository,
+                archivosRepository = container.archivosRepository,
+                recordatoriosRepository = container.recordatoriosRepository
+            )
+        }*/
 
         /* // 3. Inicializador para DetailScreenViewModel (si creas uno)
         initializer {

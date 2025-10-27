@@ -1,3 +1,4 @@
+/*
 package com.example.smartnotes.ui.screens
 
 import android.media.MediaPlayer
@@ -47,6 +48,34 @@ fun DetailScreen(
     // Buscamos el ítem por ID (asegúrate de que los IDs sean Strings en el modelo UI)
     val item = items.find { it.id == itemId } ?: return
 
+    val isTask = item is NotaTareaUiModel.Task
+    var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+
+    // Convertimos a Tarea si es necesario para acceder a campos específicos
+    val taskItem = item as? NotaTareaUiModel.Task
+
+    //Dise;o adapatovo para difentes pantallas
+    if (layoutType == LayoutType.EXPANDED) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // Panel Izquierdo: Título y Descripción
+            Column(Modifier.weight(2f)) {
+                DetailContent(item) // Contenido principal de la nota/tarea
+            }
+            // Panel Derecho: Archivos Adjuntos, Audios y Acciones
+            Column(Modifier.weight(1f)) {
+                ActionsAndMedia(item, viewModel) // Nuevo composable para botones y archivos
+            }
+        }
+    } else {
+        // Layout Compacto (diseño actual, una columna vertical)
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            DetailContent(item)
+            ActionsAndMedia(item, viewModel)
+        }
+    }
 
     // State for Date and Time pickers
     var showDatePicker by remember { mutableStateOf(false) }
@@ -76,44 +105,93 @@ fun DetailScreen(
             )
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .padding(padding)
                 .padding(16.dp)
                 .fillMaxSize()
         ) {
-            //Dise;o adapatovo para difentes pantallas
-            if (layoutType == LayoutType.EXPANDED) {
-                // Diseño EXPANDIDO (Paneles Lado a Lado)
-                Row(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
-                    // Panel Izquierdo: Título y Descripción
-                    Column(Modifier.weight(2f)) {
-                        DetailContent(item) // Contenido principal de la nota/tarea
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = item.title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    if (isTask && taskItem != null) {
+                        // Usar los campos del modelo Task
+                        Text("${stringResource(R.string.date_label)}: ${taskItem.dateTimeText}", style = MaterialTheme.typography.bodySmall)
+                        // Text("${stringResource(R.string.reminder_detail_label)}: ${item.reminderText}", style = MaterialTheme.typography.bodySmall)
                     }
-                    // Panel Derecho: Archivos Adjuntos, Audios y Acciones
-                    Column(Modifier.weight(1f)) {
-                        ActionsAndMedia(item, viewModel, onBack)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = item.description,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+
+
+                    // Mostrar Archivos Adjuntos
+                    if (item.attachments.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text("${stringResource(R.string.attachments_label)}:", style = MaterialTheme.typography.bodyLarge)
+                        LazyRow {
+                            items(item.attachments) { path ->
+                                AsyncImage(model = path, contentDescription = null, modifier = Modifier.size(100.dp).padding(4.dp))
+                            }
+                        }
+                    }
+                    // Mostrar Audios
+                    if (item.audios.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Audios:", style = MaterialTheme.typography.bodyMedium)
+                        LazyRow {
+                            items(item.audios) { path ->
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp)) {
+                                    IconButton(onClick = {
+                                        mediaPlayer?.release()
+                                        mediaPlayer = MediaPlayer.create(context, Uri.parse(path)).apply { start() }
+                                    }) {
+                                        Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.play_audio_description))
+                                    }
+                                    Text(path.substringAfterLast("/"), style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
                     }
                 }
-            } else {
-                // Layout Compacto (diseño actual, una columna vertical)
-                /*Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                    DetailContent(item)
-                    ActionsAndMedia(item, viewModel)
-                }*/
-                // Diseño COMPACTO (Columna Desplazable)
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Botón de Completar Tarea
+            if (isTask && taskItem != null) {
+                Button(
+                    onClick = {
+                        // Actualizar la tarea como completada y volver
+                        val updated = taskItem.copy(completed = true)
+                        viewModel.updateItem(updated)
+                        onBack()
+                    },
+                    enabled = !taskItem.completed, // Deshabilitar si ya está completada
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    DetailContent(item)
-                    ActionsAndMedia(item, viewModel, onBack)
+                    Icon(Icons.Default.Check, contentDescription = null)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stringResource(R.string.complete_button))
                 }
+            }
+        }
+
+        DisposableEffect(Unit) {
+            onDispose {
+                mediaPlayer?.release()
             }
         }
     }
@@ -124,7 +202,6 @@ fun DetailScreen(
 @Composable
 fun DetailContent(item: NotaTareaUiModel) {
     val isTask = item is NotaTareaUiModel.Task
-    // Convertimos a Tarea si es necesario para acceder a campos específicos
     val taskItem = item as? NotaTareaUiModel.Task
 
     Card(
@@ -171,37 +248,18 @@ fun ActionsAndMedia(
     ) {
         // Archivos Adjuntos
         if (item.attachments.isNotEmpty()) {
-            Text(
-                "${stringResource(R.string.attachments_label)}:",
-                style = MaterialTheme.typography.bodyLarge
-            )
-            LazyRow {
-                items(item.attachments) { path ->
-                    AsyncImage(
-                        model = path,
-                        contentDescription = null,
-                        modifier = Modifier.size(100.dp).padding(4.dp)
-                    )
-                }
-            }
+            Text("${stringResource(R.string.attachments_label)}:", style = MaterialTheme.typography.bodyLarge)
+            LazyRow { */
+/* ... lógica de AsyncImage ... *//*
+ }
         }
 
         // Audios (con lógica de MediaPlayer)
         if (item.audios.isNotEmpty()) {
             Text("Audios:", style = MaterialTheme.typography.bodyMedium)
-            LazyRow {
-                items(item.audios) { path ->
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp)) {
-                        IconButton(onClick = {
-                            mediaPlayer?.release()
-                            mediaPlayer = MediaPlayer.create(context, Uri.parse(path)).apply { start() }
-                        }) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.play_audio_description))
-                        }
-                        Text(path.substringAfterLast("/"), style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
+            LazyRow { */
+/* ... lógica de reproducción ... *//*
+ }
         }
 
         Spacer(modifier = Modifier.weight(1f)) // Empuja los botones hacia abajo
@@ -214,7 +272,7 @@ fun ActionsAndMedia(
                     viewModel.updateItem(updated)
                     onBack()
                 },
-                enabled = !taskItem.completed, //desabilita si ya esta completada
+                enabled = !taskItem.completed,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.Check, contentDescription = null)
@@ -231,5 +289,4 @@ fun ActionsAndMedia(
             }
         }
     }
-}
-
+}*/

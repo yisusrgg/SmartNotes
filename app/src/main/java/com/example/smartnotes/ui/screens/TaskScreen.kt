@@ -3,6 +3,9 @@ package com.example.smartnotes.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -17,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.example.smartnotes.R
 import com.example.smartnotes.data.Item
 import com.example.smartnotes.ui.components.ItemCard
+import com.example.smartnotes.ui.navigation.LayoutType
 import com.example.smartnotes.ui.viewmodels.ItemViewModel
 import com.example.smartnotes.ui.viewmodels.ItemsListViewModel
 import com.example.smartnotes.ui.viewmodels.NotaTareaUiModel
@@ -26,7 +30,8 @@ import com.example.smartnotes.ui.viewmodels.NotaTareaUiModel
 fun TasksScreen(
     viewModel: ItemsListViewModel,
     onAddClick: (String) -> Unit,
-    onDetailClick: (String) -> Unit
+    onDetailClick: (String) -> Unit,
+    layoutType: LayoutType
 ) {
     //StateFlow ahora contiene NotaTareaUiModel
     val items by viewModel.itemsUiState.collectAsState()
@@ -75,30 +80,28 @@ fun TasksScreen(
                 }
             }
 
-            if (filteredItems.isEmpty()) {
-                Box(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(stringResource(R.string.empty_list_message))
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                ){
-                    items(filteredItems) { item ->
-                        ItemCard(
-                            item = item,
-                            onCheckedChange = { updated -> viewModel.updateItem(updated) },
-                            onClick = { onDetailClick(item.id) },
-                            onDelete = { viewModel.removeItem(item.id) }
-                        )
-                    }
+            //CONTENIDO ADAPTATIVO: USANDO EL WHEN DENTRO DEL COLUMN
+            Box(
+                modifier = Modifier
+                    //Ocupa el espacio restante
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                when (layoutType) {
+                    LayoutType.COMPACT -> CompactTasksLayout(
+                        filteredItems,
+                        viewModel,
+                        onDetailClick
+                    )
+                    LayoutType.MEDIUM, LayoutType.EXPANDED -> ExpandedTasksLayout(
+                        filteredItems,
+                        viewModel,
+                        onDetailClick
+                    )
                 }
             }
 
+            //Barra de busqueda y boton flotante
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -123,6 +126,63 @@ fun TasksScreen(
                     Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_button_description))
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun CompactTasksLayout(
+    filteredItems: List<NotaTareaUiModel>,
+    viewModel: ItemsListViewModel,
+    onDetailClick: (String) -> Unit
+) {
+    if (filteredItems.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(stringResource(R.string.empty_list_message))
+        }
+    } else {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+        ){
+            items(filteredItems) { item ->
+                ItemCard(
+                    item = item,
+                    onCheckedChange = { updated -> viewModel.updateItem(updated) },
+                    onClick = { onDetailClick(item.id) },
+                    onDelete = { viewModel.removeItem(item.id) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ExpandedTasksLayout(
+    filteredItems: List<NotaTareaUiModel>,
+    viewModel: ItemsListViewModel,
+    onDetailClick : (String) -> Unit
+) {
+    //Diseño de dos columnas o rejilla para mejor UX
+    LazyVerticalGrid(
+        //Ajusta automáticamente 2 o 3 columnas
+        columns = GridCells.Adaptive(minSize = 300.dp),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(filteredItems) { item ->
+            ItemCard(
+                item = item,
+                onCheckedChange = { updated -> viewModel.updateItem(updated) },
+                onClick = { onDetailClick(item.id) },
+                onDelete = { viewModel.removeItem(item.id) }
+            )
         }
     }
 }

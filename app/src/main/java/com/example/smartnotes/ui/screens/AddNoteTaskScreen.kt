@@ -50,6 +50,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.smartnotes.R
 import com.example.smartnotes.ui.components.AttachmentsSection
+import com.example.smartnotes.ui.navigation.LayoutType
 import com.example.smartnotes.ui.viewmodels.AddNoteTaskViewModel
 import com.example.smartnotes.ui.viewmodels.NotaTareaDetails
 import kotlinx.coroutines.coroutineScope
@@ -63,7 +64,8 @@ fun AddNoteTaskScreen(
     viewModel: AddNoteTaskViewModel,
     type: String,
     onDone: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    layoutType: LayoutType
 ){
     LaunchedEffect(Unit) {
         viewModel.setType(type)
