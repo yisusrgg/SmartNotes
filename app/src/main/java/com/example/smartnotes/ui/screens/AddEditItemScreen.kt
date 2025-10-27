@@ -304,6 +304,17 @@ fun AddEditItemScreen(
     }
 }
 
+@Composable
+fun ItemInputForm(
+    modifier : Modifier = Modifier,
+
+){
+    Column (modifier = modifier){
+
+    }
+}
+
+
 @Preview(showBackground = true)
 @Preview(showBackground = true, locale = "en")
 @Composable

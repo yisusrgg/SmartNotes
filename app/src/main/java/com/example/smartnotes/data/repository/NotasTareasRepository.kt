@@ -14,11 +14,13 @@ interface NotasTareasRepository {
     fun getNotaTareaStream(id: Int): Flow<NotasTareas?>
 
     /**Insert item in the data source */
-    suspend fun insertItem(item: NotasTareas)
+    suspend fun insertItem(item: NotasTareas) : Long
 
     /**Delete item from the data source*/
     suspend fun deleteItem(item: NotasTareas)
 
     /**Update item in the data source*/
     suspend fun updateItem(item: NotasTareas)
+
+    suspend fun getNotaTareaById(id: Int): NotasTareas?
 }

@@ -7,10 +7,14 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.smartnotes.ui.AppViewModelProvider
 import com.example.smartnotes.ui.screens.AddEditItemScreen
+import com.example.smartnotes.ui.screens.AddNoteTaskScreen
 import com.example.smartnotes.ui.screens.DetailScreen
 import com.example.smartnotes.ui.screens.TasksScreen
+import com.example.smartnotes.ui.viewmodels.AddNoteTaskViewModel
 import com.example.smartnotes.ui.viewmodels.ItemViewModel
+import com.example.smartnotes.ui.viewmodels.ItemsListViewModel
 
 
 sealed class Screen(val route: String) {
@@ -27,10 +31,15 @@ sealed class Screen(val route: String) {
 fun SmartNotesNavHost(navController: NavHostController) {
     val vm: ItemViewModel = viewModel()
 
+    val vmIL: ItemsListViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val vmAdd: AddNoteTaskViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    // val vmDetail: DetailScreenViewModel = viewModel(factory = AppViewModelProvider.Factory) // Si existe
+
+
     NavHost(navController = navController, startDestination = Screen.Tasks.route) {
         composable(Screen.Tasks.route) {
             TasksScreen(
-                viewModel = vm,
+                viewModel = vmIL,
                 onAddClick = { type -> navController.navigate(Screen.Add.createRoute(type)) },
                 onDetailClick = { id -> navController.navigate(Screen.Detail.createRoute(id)) }
             )
@@ -41,8 +50,8 @@ fun SmartNotesNavHost(navController: NavHostController) {
             arguments = listOf(navArgument("type") { type = NavType.StringType })
         ) { backStackEntry ->
             val type = backStackEntry.arguments?.getString("type") ?: "task"
-            AddEditItemScreen(
-                viewModel = vm,
+            AddNoteTaskScreen(
+                viewModel = vmAdd,
                 type = type,
                 onDone = { navController.popBackStack() },
                 onBack = { navController.popBackStack() } // Aquí se pasa la acción de retroceso

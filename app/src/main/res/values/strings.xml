@@ -16,7 +16,7 @@
     <string name="new_note_title">Nueva nota</string>
     <string name="title_label">Título</string>
     <string name="description_label">Descripción</string>
-    <string name="date_time_label">Fecha / Hora</string>
+    <string name="date_time_label">Fecha / Hora de cumplimiento</string>
     <string name="reminder_label">Recordatorio</string>
     <string name="attachments_label">Adjuntos</string>
     <string name="save_button_description">Guardar</string>
@@ -29,6 +29,7 @@
     <string name="select_time_title">Seleccionar hora</string>
     <string name="complete_button">Completar</string>
     <string name="postpone_button">Postergar</string>
+    <string name="no_date_time">Seleccionar fecha y hora</string>
 
     <!-- DetailScreen -->
     <string name="date_label">Fecha</string>
@@ -36,7 +37,7 @@
     <string name="play_audio_description">Reproducir</string>
 
     <!-- Reminder Options -->
-    <string name="reminder_none">No recordar</string>
+    <string name="reminder_none">Ninguno</string>
     <string name="reminder_on_time">Al momento</string>
     <string name="reminder_5_min">5 minutos antes</string>
     <string name="reminder_10_min">10 minutos antes</string>

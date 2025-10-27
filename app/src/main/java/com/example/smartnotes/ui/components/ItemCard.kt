@@ -15,16 +15,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.smartnotes.data.Item
+import com.example.smartnotes.ui.viewmodels.NotaTareaUiModel
 
 @Composable
 fun ItemCard(
-    item: Item,
-    onCheckedChange: (Item) -> Unit,
+    item: NotaTareaUiModel,
+    onCheckedChange: (NotaTareaUiModel) -> Unit,
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val isTask = item is Item.Task
-    val isCompleted = if (isTask) (item as Item.Task).completed else false
+    val isTask = item is NotaTareaUiModel.Task
+    val isCompleted = if (isTask) (item as NotaTareaUiModel.Task).completed else false
 
     Card(
         modifier = Modifier
@@ -40,13 +41,18 @@ fun ItemCard(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(12.dp)
         ) {
-            if (isTask) {
-                Checkbox(
-                    checked = isCompleted,
-                    onCheckedChange = {
-                        onCheckedChange((item as Item.Task).copy(completed = it))
-                    }
-                )
+            when (item) {
+                is NotaTareaUiModel.Task -> {
+                    // Solo se muestra el Checkbox para Tareas
+                    Checkbox(
+                        checked = item.completed,
+                        onCheckedChange = { isChecked ->
+                            onCheckedChange(item.copy(completed = isChecked))
+                        },
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                }
+                is NotaTareaUiModel.Note -> {}
             }
             Column(
                 modifier = Modifier
@@ -61,7 +67,7 @@ fun ItemCard(
                     ) else MaterialTheme.typography.bodyLarge,
                     fontWeight = if (isCompleted) FontWeight.Normal else FontWeight.Bold
                 )
-                if (item is Item.Task) {
+                if (item is NotaTareaUiModel.Task) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = item.dateTimeText,
@@ -117,10 +123,15 @@ fun ItemCard(
     }
 }
 
+// EN: .../ui/components/ItemCard.kt
+
+// PRIMERA PREVIEW (Esta ya está correcta)
 @Preview(showBackground = true)
 @Composable
 fun ItemCardPreview() {
-    val sampleTask = Item.Task(
+    // Creas una instancia de NotaTareaUiModel.Task, lo cual es correcto.
+    val sampleTask = NotaTareaUiModel.Task(
+        id="0",
         title = "Hacer la compra de la semana",
         description = "no se",
         dateTimeText = "Mañana a las 10:00 AM",
@@ -131,21 +142,26 @@ fun ItemCardPreview() {
 
     ItemCard(
         item = sampleTask,
-        onCheckedChange = {}, // En preview, no necesita hacer nada
-        onClick = {},          // En preview, no necesita hacer nada
+        onCheckedChange = {},
+        onClick = {},
         onDelete = {}
     )
 }
 
+// SEGUNDA PREVIEW (CORREGIDA)
 @Preview(showBackground = true)
 @Composable
 fun NoteCardPreview() {
-    val sampleNote = Item.Note(
+    // CORRECCIÓN: Crea una instancia de 'NotaTareaUiModel.Note'
+    val sampleNote = NotaTareaUiModel.Note(
+        id="0",
         title = "Idea para nuevo proyecto",
         description = "Investigar Firebase Realtime Database",
         attachments = emptyList(),
         audios = emptyList()
     )
+
+    // Ahora le estás pasando el tipo correcto a la función
     ItemCard(
         item = sampleNote,
         onCheckedChange = {},

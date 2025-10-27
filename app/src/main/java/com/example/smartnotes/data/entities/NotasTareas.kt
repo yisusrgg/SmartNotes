@@ -10,7 +10,7 @@ data class NotasTareas(
     val id: Int = 0,
     val titulo: String,
     val descripcion: String,
-    val tipo: Int, // "0 nota" o "1 tarea"
+    val tipo: String, // "1 nota" o "0 tarea"
     val estaCumplida: Boolean = false,
     val fechaRegistro: LocalDateTime,
     val fechaCumplimiento: LocalDateTime? = null

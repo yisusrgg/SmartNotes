@@ -18,20 +18,25 @@ import com.example.smartnotes.R
 import com.example.smartnotes.data.Item
 import com.example.smartnotes.ui.components.ItemCard
 import com.example.smartnotes.ui.viewmodels.ItemViewModel
+import com.example.smartnotes.ui.viewmodels.ItemsListViewModel
+import com.example.smartnotes.ui.viewmodels.NotaTareaUiModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TasksScreen(
-    viewModel: ItemViewModel,
+    viewModel: ItemsListViewModel,
     onAddClick: (String) -> Unit,
     onDetailClick: (String) -> Unit
 ) {
-    val items by viewModel.items.collectAsState()
+    //StateFlow ahora contiene NotaTareaUiModel
+    val items by viewModel.itemsUiState.collectAsState()
     var selectedTab by remember { mutableStateOf(0) } //0:Tareas, 1:Notas
     var searchQuery by remember { mutableStateOf("") }
 
     val filteredItems = remember(items, selectedTab, searchQuery) {
-        val itemsByType = if (selectedTab == 0) items.filterIsInstance<Item.Task>() else items.filterIsInstance<Item.Note>()
+        val itemsByType = if (selectedTab == 0)
+            items.filterIsInstance<NotaTareaUiModel.Task>()
+        else items.filterIsInstance<NotaTareaUiModel.Note>()
         if (searchQuery.isNotBlank()) {
             itemsByType.filter { it.title.contains(searchQuery, ignoreCase = true) }
         } else {
@@ -97,7 +102,7 @@ fun TasksScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.Transparent) // <-- Color corregido
+                    .background(Color.Transparent)
                     .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)

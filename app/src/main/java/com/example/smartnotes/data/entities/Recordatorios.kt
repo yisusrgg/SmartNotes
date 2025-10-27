@@ -20,5 +20,6 @@ data class Recordatorios(
     val id: Int = 0,
     val tareaId: Int,
     val fecha: Long,
+    val opcion: Int,
     val fueNotificado: Boolean = false
 )

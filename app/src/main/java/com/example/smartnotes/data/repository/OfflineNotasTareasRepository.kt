@@ -24,4 +24,7 @@ class OfflineNotasTareasRepository  (
 
     override suspend fun updateItem(item: NotasTareas) =
         notasTareasDao.update(item)
+    override suspend fun getNotaTareaById(id: Int): NotasTareas? =
+        notasTareasDao.getNotaTareaById(id)
+
 }

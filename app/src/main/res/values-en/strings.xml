@@ -16,7 +16,7 @@
     <string name="new_note_title">New Note</string>
     <string name="title_label">Title</string>
     <string name="description_label">Description</string>
-    <string name="date_time_label">Date / Time</string>
+    <string name="date_time_label">Date / Time of completion</string>
     <string name="reminder_label">Reminder</string>
     <string name="attachments_label">Attachments</string>
     <string name="save_button_description">Save</string>
@@ -29,6 +29,7 @@
     <string name="select_time_title">Select Time</string>
     <string name="complete_button">Complete</string>
     <string name="postpone_button">Postpone</string>
+    <string name="no_date_time">Select date and time</string>
 
     <!-- DetailScreen -->
     <string name="date_label">Date</string>

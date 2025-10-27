@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation("androidx.compose.ui:ui-text-google-fonts:1.6.8")
     implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation(libs.androidx.material3)
     //implementation(libs.androidx.room.common.jvm)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 

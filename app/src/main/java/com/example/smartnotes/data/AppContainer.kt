@@ -20,12 +20,6 @@ interface AppContainer {
  * Crea las instancias de base de datos y repositorios.
  */
 class AppDataContainer(private val context: Context) : AppContainer {
-    //EJEMPLO ANTERIOR
-    //override val notasTareasRepository: NotasTareasRepository by lazy {
-    //    OfflineNotasTareasRepository(
-    //        SmartNotesDatabase.getDatabase(context).itemDao())
-    //}
-
     // Base de datos
     private val database by lazy {
         SmartNotesDatabase.getDatabase(context)
