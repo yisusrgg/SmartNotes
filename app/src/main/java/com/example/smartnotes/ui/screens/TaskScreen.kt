@@ -1,27 +1,32 @@
 package com.example.smartnotes.ui.screens
 
+import android.media.MediaPlayer
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.smartnotes.R
-import com.example.smartnotes.data.Item
 import com.example.smartnotes.ui.components.ItemCard
 import com.example.smartnotes.ui.navigation.LayoutType
-import com.example.smartnotes.ui.viewmodels.ItemViewModel
 import com.example.smartnotes.ui.viewmodels.ItemsListViewModel
 import com.example.smartnotes.ui.viewmodels.NotaTareaUiModel
 
@@ -33,10 +38,19 @@ fun TasksScreen(
     onDetailClick: (String) -> Unit,
     layoutType: LayoutType
 ) {
-    //StateFlow ahora contiene NotaTareaUiModel
     val items by viewModel.itemsUiState.collectAsState()
-    var selectedTab by remember { mutableStateOf(0) } //0:Tareas, 1:Notas
+    var selectedTab by remember { mutableStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
+
+    // State for expanded layout selection
+    var selectedItemId by remember { mutableStateOf<String?>(null) }
+    val selectedItem = remember(selectedItemId, items) {
+        items.find { it.id == selectedItemId }
+    }
+    // Reset selection when switching tabs
+    LaunchedEffect(selectedTab) {
+        selectedItemId = null
+    }
 
     val filteredItems = remember(items, selectedTab, searchQuery) {
         val itemsByType = if (selectedTab == 0)
@@ -80,10 +94,8 @@ fun TasksScreen(
                 }
             }
 
-            //CONTENIDO ADAPTATIVO: USANDO EL WHEN DENTRO DEL COLUMN
             Box(
                 modifier = Modifier
-                    //Ocupa el espacio restante
                     .weight(1f)
                     .fillMaxWidth()
             ) {
@@ -94,14 +106,19 @@ fun TasksScreen(
                         onDetailClick
                     )
                     LayoutType.MEDIUM, LayoutType.EXPANDED -> ExpandedTasksLayout(
-                        filteredItems,
-                        viewModel,
-                        onDetailClick
+                        filteredItems = filteredItems,
+                        viewModel = viewModel,
+                        selectedItem = selectedItem,
+                        onItemClick = { itemId ->
+                            selectedItemId = itemId
+                        },
+                        onTaskCompleted = {
+                            selectedItemId = null // Clear selection
+                        }
                     )
                 }
             }
 
-            //Barra de busqueda y boton flotante
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -166,23 +183,172 @@ fun CompactTasksLayout(
 fun ExpandedTasksLayout(
     filteredItems: List<NotaTareaUiModel>,
     viewModel: ItemsListViewModel,
-    onDetailClick : (String) -> Unit
+    selectedItem: NotaTareaUiModel?,
+    onItemClick: (String) -> Unit,
+    onTaskCompleted: () -> Unit
 ) {
-    //Diseño de dos columnas o rejilla para mejor UX
-    LazyVerticalGrid(
-        //Ajusta automáticamente 2 o 3 columnas
-        columns = GridCells.Adaptive(minSize = 300.dp),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(filteredItems) { item ->
-            ItemCard(
-                item = item,
-                onCheckedChange = { updated -> viewModel.updateItem(updated) },
-                onClick = { onDetailClick(item.id) },
-                onDelete = { viewModel.removeItem(item.id) }
+    Row(Modifier.fillMaxSize()) {
+        // Panel izquierdo: Lista de ítems
+        Box(modifier = Modifier.weight(0.4f)) {
+            CompactTasksLayout(
+                filteredItems = filteredItems,
+                viewModel = viewModel,
+                onDetailClick = onItemClick
             )
+        }
+
+        // Separador vertical
+        VerticalDivider(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(1.dp),
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
+
+        // Panel derecho: Vista de detalle
+        Box(modifier = Modifier.weight(0.6f)) {
+            if (selectedItem != null) {
+                ItemDetailView(
+                    item = selectedItem,
+                    viewModel = viewModel,
+                    onTaskCompleted = onTaskCompleted
+                )
+            } else {
+                // Placeholder cuando no hay nada seleccionado
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Select an item to see details.")
+                }
+            }
+        }
+    }
+}
+
+
+// --- Composables de Detalle (extraídos de DetailScreen) ---
+
+@Composable
+fun ItemDetailView(
+    item: NotaTareaUiModel,
+    viewModel: ItemsListViewModel,
+    onTaskCompleted: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        DetailContent(item)
+        ActionsAndMedia(item, viewModel, onTaskCompleted)
+    }
+}
+
+@Composable
+fun DetailContent(item: NotaTareaUiModel) {
+    val isTask = item is NotaTareaUiModel.Task
+    val taskItem = item as? NotaTareaUiModel.Task
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = item.title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+
+            if (isTask && taskItem != null) {
+                Text("${stringResource(R.string.date_label)}: ${taskItem.dateTimeText}", style = MaterialTheme.typography.bodySmall)
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = item.description,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+    }
+}
+
+@Composable
+fun ActionsAndMedia(
+    item: NotaTareaUiModel,
+    viewModel: ItemsListViewModel,
+    onTaskCompleted: () -> Unit
+) {
+    val context = LocalContext.current
+    val isTask = item is NotaTareaUiModel.Task
+    val taskItem = item as? NotaTareaUiModel.Task
+    var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        if (item.attachments.isNotEmpty()) {
+            Text(
+                "${stringResource(R.string.attachments_label)}:",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            LazyRow {
+                items(item.attachments) { path ->
+                    AsyncImage(
+                        model = path,
+                        contentDescription = null,
+                        modifier = Modifier.size(100.dp).padding(4.dp)
+                    )
+                }
+            }
+        }
+
+        if (item.audios.isNotEmpty()) {
+            Text("Audios:", style = MaterialTheme.typography.bodyMedium)
+            LazyRow {
+                items(item.audios) { path ->
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp)) {
+                        IconButton(onClick = {
+                            mediaPlayer?.release()
+                            mediaPlayer = MediaPlayer.create(context, Uri.parse(path)).apply { start() }
+                        }) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.play_audio_description))
+                        }
+                        Text(path.substringAfterLast("/"), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        if (isTask && taskItem != null) {
+            Button(
+                onClick = {
+                    val updated = taskItem.copy(completed = true)
+                    viewModel.updateItem(updated)
+                    onTaskCompleted()
+                },
+                enabled = !taskItem.completed,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Check, contentDescription = null)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(stringResource(R.string.complete_button))
+            }
+        }
+
+        DisposableEffect(item.id) {
+            onDispose {
+                mediaPlayer?.release()
+                mediaPlayer = null
+            }
         }
     }
 }

@@ -80,8 +80,7 @@ fun SmartNotesNavHost(navController: NavHostController, windowSizeClass: WindowW
                 viewModel = vmIL,
                 itemId = itemId,
                 onBack = { navController.popBackStack() },
-                onEditClick = {},
-                layoutType = layoutType
+                onEditClick = {}
             )
         }
 
