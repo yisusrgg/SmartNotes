@@ -320,13 +320,11 @@ fun RemindersSection(
             trailingIcon = {
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
 
-                    // --- ICONO PARA AÑADIR EL RECORDATORIO ---
                     if (isOptionValid) {
                         IconButton(
                             onClick = {
                                 viewModel.addCurrentReminder()
                             },
-                            // Un icono de 'Añadir' o 'Check' para confirmar
                             modifier = Modifier
                                 .size(24.dp)
                         ) {
@@ -339,7 +337,6 @@ fun RemindersSection(
                     }
 
                     Spacer(modifier = Modifier.width(12.dp))
-                    // Icono de flecha del dropdown
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = reminderState.isReminderExpanded)
                     Spacer(modifier = Modifier.width(6.dp))
                 }
@@ -368,19 +365,14 @@ fun RemindersSection(
         }
     }
 
-    // --- NUEVO: Mostrar Recordatorios Añadidos (Opcional, pero muy recomendado) ---
-    // Esto es vital para que el usuario sepa que SÍ ha añadido un recordatorio
     Spacer(modifier = Modifier.height(8.dp))
     RecordatoriosListDisplay(viewModel = viewModel)
 }
 
-// -----------------------------------------------------------------
 // COMPONENTE AUXILIAR PARA VISUALIZAR LOS RECORDATORIOS AÑADIDOS
-// -----------------------------------------------------------------
-
 @Composable
 fun RecordatoriosListDisplay(viewModel: AddNoteTaskViewModel) {
-    // Si la lista está vacía, no mostrar nada
+    //Si la lista está vacía, no mostrar nada
     if (viewModel.recordatoriosList.isEmpty()) {
         return
     }
