@@ -9,12 +9,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.smartnotes.ui.AppViewModelProvider
-import com.example.smartnotes.ui.screens.AddEditItemScreen
 import com.example.smartnotes.ui.screens.AddNoteTaskScreen
 import com.example.smartnotes.ui.screens.DetailScreen
 import com.example.smartnotes.ui.screens.TasksScreen
 import com.example.smartnotes.ui.viewmodels.AddNoteTaskViewModel
-import com.example.smartnotes.ui.viewmodels.ItemViewModel
 import com.example.smartnotes.ui.viewmodels.ItemsListViewModel
 
 
