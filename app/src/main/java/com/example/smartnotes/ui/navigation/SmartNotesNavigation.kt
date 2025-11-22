@@ -2,6 +2,7 @@ package com.example.smartnotes.ui.navigation
 
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -9,10 +10,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.smartnotes.ui.AppViewModelProvider
+//import com.example.smartnotes.ui.screens.AddEditItemScreen
 import com.example.smartnotes.ui.screens.AddNoteTaskScreen
 import com.example.smartnotes.ui.screens.DetailScreen
 import com.example.smartnotes.ui.screens.TasksScreen
 import com.example.smartnotes.ui.viewmodels.AddNoteTaskViewModel
+//import com.example.smartnotes.ui.viewmodels.ItemViewModel
 import com.example.smartnotes.ui.viewmodels.ItemsListViewModel
 
 
@@ -60,6 +63,12 @@ fun SmartNotesNavHost(navController: NavHostController, windowSizeClass: WindowW
             arguments = listOf(navArgument("type") { type = NavType.StringType })
         ) { backStackEntry ->
             val type = backStackEntry.arguments?.getString("type") ?: "task"
+            
+            // Limpiar el ViewModel cuando entramos a añadir nuevo
+            LaunchedEffect(type) {
+                vmAdd.setType(type)
+            }
+
             AddNoteTaskScreen(
                 viewModel = vmAdd,
                 type = type,
@@ -78,19 +87,29 @@ fun SmartNotesNavHost(navController: NavHostController, windowSizeClass: WindowW
                 viewModel = vmIL,
                 itemId = itemId,
                 onBack = { navController.popBackStack() },
-                onEditClick = {}
+                onEditClick = { id -> navController.navigate(Screen.Edit.createRoute(id)) }
             )
         }
 
-        /*composable(
+        composable(
             route = Screen.Edit.route,
-            arguments = listOf(navArgument("itemId") { type = NavType.IntType }) // Usar IntType
-        ) {
-            AddNoteTaskScreen( // Reutilizar la pantalla de formulario
-                viewModel = vmEdit,
-                onBack = { navController.popBackStack() }
+            arguments = listOf(navArgument("itemId") { type = NavType.StringType }) 
+        ) { backStackEntry ->
+            val itemId = backStackEntry.arguments?.getString("itemId") ?: return@composable
+            
+            // Cargar datos para editar
+            LaunchedEffect(itemId) {
+                vmAdd.loadItem(itemId)
+            }
+
+            AddNoteTaskScreen( 
+                viewModel = vmAdd,
+                type = vmAdd.notaTareaUiState.notaTareaDetails.tipo, // El tipo viene del estado cargado
+                onDone = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
+                layoutType = layoutType
             )
-        }*/
+        }
     }
 }
 

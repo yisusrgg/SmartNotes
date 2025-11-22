@@ -14,6 +14,8 @@ import com.example.smartnotes.R
 import com.example.smartnotes.data.entities.Recordatorios
 import com.example.smartnotes.data.repository.ArchivosRepository
 import com.example.smartnotes.data.repository.RecordatoriosRepository
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 
 /**
  * ViewModel to validate and insert items in the Room database.
@@ -61,30 +63,85 @@ class AddNoteTaskViewModel (
         audios = emptyList()
 
         // 5. Reiniciar el estado de recordatorios (si es necesario)
-        reminderDetails = ReminderDetails() // Asume que ReminderDetails() es el estado por defecto.
+        reminderDetails = ReminderDetails() 
+        recordatoriosList = emptyList()
+        
+        // Reset pickers
+        selectedDateMillis = null
+        selectedHour = 0
+        selectedMinute = 0
+    }
+
+    // Cargar item existente para editar
+    suspend fun loadItem(itemId: String) {
+        val id = itemId.toIntOrNull() ?: return
+        val item = repository.getNotaTareaById(id) ?: return
+
+        // 1. Cargar detalles de la nota/tarea
+        val details = item.toNotaTareaDetails()
+        updateUiState(details)
+
+        // 2. Si es tarea, cargar sus recordatorios
+        if (item.tipo == "task") {
+             val recordatorios = recordatorioRepository.getAllRecordatoriosStream(id).first()
+             recordatoriosList = recordatorios.map { 
+                 RecordatorioDetails(
+                     opcionResId = it.opcion, 
+                     fechaMillis = it.fecha
+                 ) 
+             }
+             // Configurar fecha inicial para los pickers si ya existe
+             details.fechaCumplimiento?.let {
+                 val zoneId = java.time.ZoneId.systemDefault()
+                 selectedDateMillis = it.atZone(zoneId).toInstant().toEpochMilli()
+                 selectedHour = it.hour
+                 selectedMinute = it.minute
+             }
+        }
+        
+        // TODO: Cargar adjuntos si tuvieras una tabla de adjuntos vinculada
     }
 
     suspend fun saveNotaTarea() {
         if (validateInput()) {
-            val details = notaTareaUiState.notaTareaDetails.copy(
-                fechaRegistro = LocalDateTime.now()
+            val currentDetails = notaTareaUiState.notaTareaDetails
+            val isEdit = currentDetails.id != 0
+            
+            val detailsToSave = currentDetails.copy(
+                 // Si es edicion mantenemos la fecha registro original, si es nuevo ponemos now()
+                 // Pero en tu logica de toNotaTarea() si fechaRegistro es null pone now().
+                 // Al cargar, fechaRegistro ya viene con valor.
+                 fechaRegistro = currentDetails.fechaRegistro ?: LocalDateTime.now()
             )
+            
+            val itemToSave = detailsToSave.toNotaTarea()
+            val savedId: Long
 
-            //Guardar la Nota/Tarea. Asumimos que insertItem devuelve el Long ID.
-            val notaTareaId = repository.insertItem(details.toNotaTarea())
+            if (isEdit) {
+                repository.updateItem(itemToSave)
+                savedId = itemToSave.id.toLong()
+                
+                // Si es tarea, actualizamos recordatorios (estrategia: borrar todos y reinsertar)
+                if (itemToSave.tipo == "task") {
+                    // 1. Obtener los existentes
+                    val existingReminders = recordatorioRepository.getAllRecordatoriosStream(savedId.toInt()).first()
+                    // 2. Borrarlos
+                    existingReminders.forEach { recordatorioRepository.deleteItem(it) }
+                }
+            } else {
+                savedId = repository.insertItem(itemToSave)
+            }
 
-            //LÓGICA PARA GUARDAR LOS RECORDATORIOS ASOCIADOS
-            recordatoriosList.forEach { reminder ->
-                val recordatorioEntity = Recordatorios(
-                    // Usa tu entidad de Room
-                    tareaId = notaTareaId.toInt(), // Convertir el ID
-                    fecha = reminder.fechaMillis,
-                    opcion = reminder.opcionResId, // Necesitarás un contexto para stringResource O guardar el String directamente.
-
-                )
-
-                // RecordatorioRepository
-                recordatorioRepository.insertItem(recordatorioEntity)
+            // Insertar los nuevos recordatorios (tanto para nuevo como para edit)
+            if (itemToSave.tipo == "task") {
+                 recordatoriosList.forEach { reminder ->
+                    val recordatorioEntity = Recordatorios(
+                        tareaId = savedId.toInt(),
+                        fecha = reminder.fechaMillis,
+                        opcion = reminder.opcionResId
+                    )
+                    recordatorioRepository.insertItem(recordatorioEntity)
+                }
             }
 
             // Limpiar el estado de recordatorios después de guardar
@@ -140,9 +197,9 @@ class AddNoteTaskViewModel (
         ))
 
         // Opcional: limpiar los valores temporales si no se van a usar más
-        this.selectedDateMillis = null
-        this.selectedHour = 0
-        this.selectedMinute = 0
+        // this.selectedDateMillis = null // Comentado: mejor mantenerlo por si el usuario reabre el picker
+        this.selectedHour = hour
+        this.selectedMinute = minute
     }
 
     // --- FUNCIÓN DE UTILIDAD DE CONVERSIÓN---
@@ -214,6 +271,11 @@ class AddNoteTaskViewModel (
 
         // Calcular el tiempo exacto
         val recordatorioMillis = calcularFechaRecordatorio(selectedOptionResId, cumplimiento)
+        
+        // Evitar duplicados exactos (misma opción)
+        if (recordatoriosList.any { it.opcionResId == selectedOptionResId }) {
+            return 
+        }
 
         //Añadir a la lista
         val nuevoRecordatorio = RecordatorioDetails(
@@ -224,6 +286,11 @@ class AddNoteTaskViewModel (
 
         //Resetear la selección del dropdown para que el usuario añada otro
         reminderDetails = reminderDetails.copy(selectedReminderOption = R.string.reminder_none)
+    }
+    
+    // Función para eliminar recordatorio de la lista (antes de guardar)
+    fun removeReminder(reminder: RecordatorioDetails) {
+        recordatoriosList = recordatoriosList - reminder
     }
 
     fun setReminderExpanded(expanded: Boolean) {
@@ -336,4 +403,3 @@ private val INITIAL_STATE = NotaTareaDetails(
     estaCumplida = false,
     fechaCumplimiento = null,
 )
-

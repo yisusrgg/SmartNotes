@@ -15,16 +15,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircleOutline
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
@@ -34,7 +32,6 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -45,7 +42,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -56,7 +52,6 @@ import com.example.smartnotes.ui.components.AttachmentsSection
 import com.example.smartnotes.ui.navigation.LayoutType
 import com.example.smartnotes.ui.viewmodels.AddNoteTaskViewModel
 import com.example.smartnotes.ui.viewmodels.NotaTareaDetails
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -70,16 +65,21 @@ fun AddNoteTaskScreen(
     onBack: () -> Unit,
     layoutType: LayoutType
 ){
-    LaunchedEffect(Unit) {
-        viewModel.setType(type)
-    }
+    // La carga inicial del tipo ya se maneja en el NavHost con LaunchedEffect.
+    // No necesitamos viewModel.setType(type) aquí si venimos de editar.
+    
     // El estado del UI se extrae para que los campos de texto reaccionen.
     val uiState = viewModel.notaTareaUiState
     val notaTareaDetails = uiState.notaTareaDetails
     val isEntryValid = uiState.isEntryValid
-
-    val titleBar =  if (type == "task") stringResource(R.string.new_task_title)
-                    else stringResource(R.string.new_note_title)
+    
+    // Ajustar título dinámicamente (Editar vs Nueva)
+    val isEditMode = notaTareaDetails.id != 0
+    val titleBar =  if (isEditMode) {
+         if (notaTareaDetails.tipo == "task") stringResource(R.string.edit_task_title) else stringResource(R.string.edit_note_title)
+    } else {
+         if (type == "task") stringResource(R.string.new_task_title) else stringResource(R.string.new_note_title)
+    }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -212,10 +212,15 @@ fun NoteTaskBody(
     onRecordAudio: () -> Unit
 ){
     val notaTareaDetails = viewModel.notaTareaUiState.notaTareaDetails
+    
+    // 1. Creamos el estado del scroll
+    val scrollState = rememberScrollState()
 
     Column (modifier = modifier
         .padding(16.dp)
-        .fillMaxSize()){
+        .fillMaxSize()
+        .verticalScroll(scrollState) // 2. Habilitamos el scroll vertical
+    ){
         OutlinedTextField(
             value = notaTareaDetails.titulo,
             onValueChange = { onValueChange(notaTareaDetails.copy(titulo = it)) },
@@ -252,19 +257,8 @@ fun NoteTaskBody(
             onRecordAudioClick = onRecordAudio
         )
 
-        //Botones para tareas. Posponer y cunplida
-        Spacer(modifier = Modifier.weight(1f))
-        if (tipo == "task") {
-            TaskActionButtons(
-                onComplete = {
-                    viewModel.updateUiState(notaTareaDetails.copy(estaCumplida = true))
-                    //viewModel.save(null) { onDone() }
-                },
-                onPostpone = {
-                    viewModel.setDatePickerVisibility(true)
-                }
-            )
-        }
+        // Espacio extra al final para asegurar que se vea todo bien
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
@@ -403,52 +397,24 @@ fun RecordatoriosListDisplay(viewModel: AddNoteTaskViewModel) {
                     .toLocalDateTime()
                     .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm"))
 
-                Text(
-                    text = "(${formattedTime})",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-
-                // Opcional: Botón para eliminar un recordatorio de la lista
-                /*
-                IconButton(onClick = {
-                    // Lógica para eliminar el recordatorio de la lista
-                }) {
-                    Icon(Icons.Default.Close, contentDescription = "Eliminar recordatorio")
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                     Text(
+                        text = "(${formattedTime})",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                    // Botón para eliminar recordatorio
+                    IconButton(onClick = {
+                        viewModel.removeReminder(reminder)
+                    }) {
+                        Icon(
+                            Icons.Default.Close, 
+                            contentDescription = "Eliminar recordatorio",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
-                */
             }
-        }
-    }
-}
-
-
-@Composable
-fun TaskActionButtons(
-    onComplete: () -> Unit,
-    onPostpone: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Button(
-            //onClick = { handleSave(completed = true) },
-            onClick = onComplete,
-            modifier = Modifier.weight(1f)
-        ) {
-            Icon(Icons.Filled.Check, contentDescription = null)
-            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-            Text(stringResource(R.string.complete_button))
-        }
-        OutlinedButton(
-            //onClick = { showDatePicker = true },
-            onClick = onPostpone,
-            modifier = Modifier.weight(1f)
-        ) {
-            Icon(Icons.Filled.Schedule, contentDescription = null)
-            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-            Text(stringResource(R.string.postpone_button))
         }
     }
 }
