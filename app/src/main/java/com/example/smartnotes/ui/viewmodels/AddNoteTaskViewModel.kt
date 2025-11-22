@@ -233,10 +233,6 @@ class AddNoteTaskViewModel (
 
 
 
-
-
-
-
     //ARCHIVOS -=---------------------------------------------------------
     // Listas de rutas de archivos
     var attachments by mutableStateOf(emptyList<String>())

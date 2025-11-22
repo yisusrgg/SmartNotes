@@ -45,6 +45,8 @@
     <string name="reminder_30_min">30 minutes before</string>
     <string name="reminder_1_hour">1 hour before</string>
     <string name="reminder_1_day">1 day before</string>
+    <string name="reminders_added_label">Reminders to save:</string>
+    <string name="add_reminder_button">Add reminder</string>
 
 
 </resources>

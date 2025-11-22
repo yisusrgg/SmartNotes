@@ -14,8 +14,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Schedule
@@ -105,7 +108,8 @@ fun AddNoteTaskScreen(
                 ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_button_description))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back_button_description))
                     }
                 },
                 actions = {
@@ -118,7 +122,8 @@ fun AddNoteTaskScreen(
                         },
                         enabled = isEntryValid
                     ){
-                        Icon(Icons.Default.Save, contentDescription = stringResource(R.string.save_button_description))
+                        Icon(Icons.Default.Save,
+                            contentDescription = stringResource(R.string.save_button_description))
                     }
                 }
             )
@@ -141,7 +146,7 @@ fun AddNoteTaskScreen(
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = viewModel.notaTareaUiState.notaTareaDetails.fechaCumplimiento
             ?.atZone(java.time.ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
-            ?: java.time.Instant.now().toEpochMilli() // 👈 Cambio: Usar java.time.Instant
+            ?: java.time.Instant.now().toEpochMilli()
     )
     val timePickerState = rememberTimePickerState(
         initialHour = viewModel.notaTareaUiState.notaTareaDetails.fechaCumplimiento?.hour ?: 0,
@@ -234,7 +239,8 @@ fun NoteTaskBody(
         if (tipo == "task") {
             TaskFieldsSection(viewModel = viewModel)
             Spacer(Modifier.height(12.dp))
-            RemindersSection(viewModel = viewModel)
+            val isDateSet = viewModel.notaTareaUiState.notaTareaDetails.fechaCumplimiento != null
+            if(isDateSet) RemindersSection(viewModel = viewModel)
         }
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -296,22 +302,54 @@ fun RemindersSection(
     viewModel: AddNoteTaskViewModel
 ) {
     val reminderState = viewModel.reminderDetails
+    val isOptionValid = reminderState.selectedReminderOption != R.string.reminder_none
 
     Spacer(modifier = Modifier.height(12.dp))
+
+    // --- 1. DropdownMenuBox ---
     ExposedDropdownMenuBox(
         expanded = reminderState.isReminderExpanded,
         onExpandedChange = { viewModel.setReminderExpanded(!reminderState.isReminderExpanded) }
     ) {
+        // --- 2. OutlinedTextField (Menu Anchor) ---
         OutlinedTextField(
             value = stringResource(id = reminderState.selectedReminderOption),
             onValueChange = {},
             label = { Text(stringResource(R.string.reminder_label)) },
             readOnly = true,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = reminderState.isReminderExpanded) },
+            trailingIcon = {
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+
+                    // --- ICONO PARA AÑADIR EL RECORDATORIO ---
+                    if (isOptionValid) {
+                        IconButton(
+                            onClick = {
+                                viewModel.addCurrentReminder()
+                            },
+                            // Un icono de 'Añadir' o 'Check' para confirmar
+                            modifier = Modifier
+                                .size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.AddCircleOutline,
+                                contentDescription = stringResource(R.string.add_reminder_button),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+                    // Icono de flecha del dropdown
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = reminderState.isReminderExpanded)
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor()
         )
+
+        // --- 3. ExposedDropdownMenu ---
         ExposedDropdownMenu(
             expanded = reminderState.isReminderExpanded,
             onDismissRequest = { viewModel.setReminderExpanded(false) }
@@ -320,15 +358,77 @@ fun RemindersSection(
                 DropdownMenuItem(
                     text = { Text(stringResource(option)) },
                     onClick = {
-                        //reminderText = option
+                        // Solo actualiza la opción seleccionada
                         viewModel.updateReminderOption(option)
+                        // Cierra el menú después de la selección
+                        viewModel.setReminderExpanded(false)
                     }
                 )
             }
         }
     }
+
+    // --- NUEVO: Mostrar Recordatorios Añadidos (Opcional, pero muy recomendado) ---
+    // Esto es vital para que el usuario sepa que SÍ ha añadido un recordatorio
+    Spacer(modifier = Modifier.height(8.dp))
+    RecordatoriosListDisplay(viewModel = viewModel)
 }
 
+// -----------------------------------------------------------------
+// COMPONENTE AUXILIAR PARA VISUALIZAR LOS RECORDATORIOS AÑADIDOS
+// -----------------------------------------------------------------
+
+@Composable
+fun RecordatoriosListDisplay(viewModel: AddNoteTaskViewModel) {
+    // Si la lista está vacía, no mostrar nada
+    if (viewModel.recordatoriosList.isEmpty()) {
+        return
+    }
+
+    Column {
+        Text(
+            text = stringResource(R.string.reminders_added_label), // Ej: "Recordatorios a guardar:"
+            style = MaterialTheme.typography.labelMedium
+        )
+        viewModel.recordatoriosList.forEach { reminder ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // 1. Muestra cuándo debe sonar (Ej: 10 minutos antes)
+                Text(
+                    text = stringResource(id = reminder.opcionResId),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                // 2. Muestra la hora exacta calculada
+                // Formato la fecha Long (milisegundos) a una cadena legible
+                val formattedTime = java.time.Instant.ofEpochMilli(reminder.fechaMillis)
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDateTime()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm"))
+
+                Text(
+                    text = "(${formattedTime})",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+
+                // Opcional: Botón para eliminar un recordatorio de la lista
+                /*
+                IconButton(onClick = {
+                    // Lógica para eliminar el recordatorio de la lista
+                }) {
+                    Icon(Icons.Default.Close, contentDescription = "Eliminar recordatorio")
+                }
+                */
+            }
+        }
+    }
+}
 
 
 @Composable
