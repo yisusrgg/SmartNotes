@@ -68,8 +68,6 @@ fun AttachmentsSection(
         if (isGranted) {
             onTakePhotoClick()
         } else {
-            // Si 'shouldShowRequestPermissionRationale' es false DESPUÉS de pedir el permiso y ser denegado,
-            // significa que el usuario eligió "No volver a preguntar" o el sistema lo bloqueó.
             val showRationale = activity?.let { 
                 ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.CAMERA) 
             } ?: false
@@ -104,45 +102,33 @@ fun AttachmentsSection(
     }
 
     // --- GALERÍA (PHOTO PICKER) ---
-    // 1. Lanzador del selector de fotos
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
-        // Cuando el usuario selecciona una imagen/video, recibimos la URI
         uri?.let { 
-            // TEMPORALMENTE DESHABILITADO:
-            // No agregamos la URI al ViewModel hasta que se implemente FileProvider para separar archivos por nota.
+            // TEMPORALMENTE DESHABILITADO
             // viewModel.addAttachment(it.toString()) 
         }
     }
 
-    // 2. Definir qué permisos pedir según la versión de Android
     val galleryPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        // Android 13+ necesita permisos granulares
         listOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
     } else {
-        // Android 12 e inferiores usan almacenamiento externo
         listOf(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
-    // 3. Lanzador de Permisos para Galería
     val galleryPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        // Verificamos si se concedió algún permiso necesario (lectura de imagenes o video)
         val isGranted = permissions.values.any { it }
-        
         if (isGranted) {
-            // Si hay permiso, abrimos el selector nativo (Fotos y Videos)
             galleryLauncher.launch(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
             )
         } else {
-            // Lógica de denegación permanente para múltiples permisos
             val showRationale = galleryPermissions.any { permission ->
                 activity?.let { ActivityCompat.shouldShowRequestPermissionRationale(it, permission) } ?: false
             }
-
             if (!showRationale) {
                 Toast.makeText(context, "Permiso de galería denegado. Ve a Ajustes para activarlo.", Toast.LENGTH_LONG).show()
                 openAppSettings()
@@ -151,6 +137,41 @@ fun AttachmentsSection(
             }
         }
     }
+
+    // --- DOCUMENTOS (SELECTOR DE ARCHIVOS) ---
+    // 1. Lanzador del selector de documentos
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            // TEMPORALMENTE DESHABILITADO (Igual que la galería, esperando FileProvider)
+            // viewModel.addAttachment(it.toString())
+            // Si quieres que funcione temporalmente, descomenta la línea de arriba
+        }
+    }
+
+    // 2. Lanzador de Permisos para Archivos (Solo necesario en Android < 13 para acceso general)
+    // En Android 13+, OpenDocument no requiere permisos, pero mantenemos la estructura si se solicita.
+    val filePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted || Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Abrimos el selector para todo tipo de archivos
+            filePickerLauncher.launch(arrayOf("*/*")) 
+        } else {
+             val showRationale = activity?.let {
+                ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.READ_EXTERNAL_STORAGE)
+            } ?: false
+
+            if (!showRationale) {
+                Toast.makeText(context, "Permiso de almacenamiento denegado. Ve a Ajustes.", Toast.LENGTH_LONG).show()
+                openAppSettings()
+            } else {
+                Toast.makeText(context, "Se requiere permiso de almacenamiento", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
 
     Text(stringResource(R.string.attachments_label), style = MaterialTheme.typography.titleMedium)
 
@@ -168,14 +189,21 @@ fun AttachmentsSection(
         
         // Botón GALERÍA
         IconButton(onClick = {
-            // Solicitamos permisos y abrimos galería, pero NO guardamos el resultado por ahora.
             galleryPermissionLauncher.launch(galleryPermissions.toTypedArray())
         }) {
             Icon(Icons.Default.Image, contentDescription = "Seleccionar de Galería")
         }
 
-        // Botón ARCHIVO
-        IconButton(onClick = { onSelectFileClick() }) {
+        // Botón ARCHIVO (DOCUMENTOS)
+        IconButton(onClick = { 
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                // En Android 13+ no necesitamos permiso para OpenDocument
+                filePickerLauncher.launch(arrayOf("*/*"))
+            } else {
+                // En versiones anteriores pedimos almacenamiento
+                filePermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+        }) {
             Icon(Icons.Default.AttachFile, contentDescription = stringResource(R.string.select_file_description))
         }
 
@@ -188,8 +216,6 @@ fun AttachmentsSection(
     }
 
     // TEMPORALMENTE COMENTADO: Visualización de adjuntos
-    // Se oculta para evitar confusión de ver las mismas imágenes en todas las notas
-    // hasta que se implemente la lógica de FileProvider individual.
     /*
     if (attachmentsList.isNotEmpty()) {
         LazyRow {
