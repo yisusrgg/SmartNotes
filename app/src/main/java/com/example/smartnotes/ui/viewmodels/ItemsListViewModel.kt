@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.smartnotes.data.entities.NotasTareas
 import com.example.smartnotes.data.repository.ArchivosRepository
 import com.example.smartnotes.data.repository.NotasTareasRepository
+import com.example.smartnotes.data.repository.RecordatoriosRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +23,8 @@ import java.util.Locale
 
 class ItemsListViewModel(
     private val notasTareasRepository: NotasTareasRepository,
-    private val archivosRepository: ArchivosRepository
+    private val archivosRepository: ArchivosRepository,
+    private val recordatoriosRepository: RecordatoriosRepository
 ) : ViewModel() {
 
     // Combina los flujos de Notas y Tareas de la base de datos
@@ -35,27 +37,21 @@ class ItemsListViewModel(
     }
         .map { listaNotasTareas ->
             // Se usa map para iterar y llamar a la función suspend
-            // Debemos usar un 'map' de Kotlin y llamar a la función suspend
-            withContext(Dispatchers.IO) {
                 listaNotasTareas.map { notaTarea ->
                     // NOTA: Esta llamada debe ser suspendida
-                    notaTarea.toUiModel(archivosRepository)
+                    notaTarea.toUiModel(archivosRepository, recordatoriosRepository)
                 }
-            }
+
         }
+        //Mueve la ejecución de todo el mapeo pesado (las llamadas a la BD) a un hilo IO
+        .flowOn(Dispatchers.IO)
+
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
 
-    /*fun updateItem(item: NotaTareaUiModel) {
-        viewModelScope.launch {
-            // Convierte el UiModel de vuelta a NotasTareas antes de actualizar
-            notasTareasRepository.updateItem(item.toNotasTareasEntity())
-        }
-    }*/
-    // En ItemsListViewModel.kt
 
     fun updateItem(item: NotaTareaUiModel) {
         viewModelScope.launch {
@@ -91,10 +87,27 @@ class ItemsListViewModel(
 
 
 // Mapeo de Entidad de BD a Modelo de UI
-suspend fun NotasTareas.toUiModel(archivosRepository: ArchivosRepository): NotaTareaUiModel {
-    val archivos = archivosRepository.getAllArchivosStream(this.id).firstOrNull() ?: emptyList()
-    val rutasArchivos = archivos.filter { it.tipoArchivo != "audio" }.map { it.ruta }
-    val rutasAudios = archivos.filter { it.tipoArchivo == "audio" }.map { it.ruta }
+suspend fun NotasTareas.toUiModel(
+    archivosRepository: ArchivosRepository,
+    recordatoriosRepository : RecordatoriosRepository
+): NotaTareaUiModel {
+
+    val archivosAdjuntosEntities = archivosRepository.getAllArchivosStream(this.id).firstOrNull() ?: emptyList()
+    val recordatoriosEntities = recordatoriosRepository.getAllRecordatoriosStream(this.id).firstOrNull() ?: emptyList()
+
+    //lista de entidades a lista de ArchivoAdjuntoDetails y recordatoriosUiModel (Modelo de UI)
+    val archivosUiModel = archivosAdjuntosEntities.map { archivoEntity ->
+        ArchivoAdjuntoDetails(
+            ruta = archivoEntity.ruta,
+            tipoArchivo = archivoEntity.tipoArchivo
+        )
+    }
+    val recordatoriosUiModel = recordatoriosEntities.map { recordatorioEntity ->
+        RecordatorioDetails(
+            opcionResId = recordatorioEntity.opcion,
+            fechaMillis = recordatorioEntity.fecha
+        )
+    }
 
     return if (this.tipo == "task" || this.tipo == "0") {
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
@@ -102,18 +115,19 @@ suspend fun NotasTareas.toUiModel(archivosRepository: ArchivosRepository): NotaT
             id = this.id.toString(),
             title = this.titulo,
             description = this.descripcion,
-            dateTimeText = this.fechaCumplimiento?.let { sdf.format(Date.from(it.atZone(java.time.ZoneId.systemDefault()).toInstant())) } ?: "Sin fecha",
+            dateTimeText = this.fechaCumplimiento?.let {
+                sdf.format(Date.from(it.atZone(java.time.ZoneId.systemDefault()).toInstant()))
+            } ?: "Sin fecha",
             completed = this.estaCumplida,
-            attachments = rutasArchivos,
-            audios = rutasAudios
+            attachments = archivosUiModel,
+            reminders = recordatoriosUiModel
         )
     } else {
         NotaTareaUiModel.Note(
             id = this.id.toString(),
             title = this.titulo,
             description = this.descripcion,
-            attachments = rutasArchivos,
-            audios = rutasAudios
+            attachments = archivosUiModel
         )
     }
 }

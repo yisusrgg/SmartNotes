@@ -11,6 +11,7 @@ import java.text.NumberFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import com.example.smartnotes.R
+import com.example.smartnotes.data.entities.ArchivosAdjuntos
 import com.example.smartnotes.data.entities.Recordatorios
 import com.example.smartnotes.data.repository.ArchivosRepository
 import com.example.smartnotes.data.repository.RecordatoriosRepository
@@ -51,16 +52,15 @@ class AddNoteTaskViewModel (
 
     // FUNCIÓN NECESARIA: Para actualizar el tipo al abrir la pantalla.
     fun setType(type: String) {
-        // 1. Crear un estado base LIMPIO, copiando los valores iniciales.
+        // 1.Crear un estado base LIMPIO, copiando los valores iniciales.
         // 2. Sobreescribir solo el campo 'tipo' con el valor recibido.
         val newDetails = INITIAL_STATE.copy(tipo = type)
 
         // 3. Llamar a updateUiState con los detalles limpios.
         updateUiState(newDetails)
 
-        // 4. Limpiar listas de adjuntos/audios
+        // 4. Limpiar listas de adjuntos
         attachments = emptyList()
-        audios = emptyList()
 
         // 5. Reiniciar el estado de recordatorios (si es necesario)
         reminderDetails = ReminderDetails() 
@@ -98,10 +98,9 @@ class AddNoteTaskViewModel (
                  selectedMinute = it.minute
              }
         }
-        
-        // TODO: Cargar adjuntos si tuvieras una tabla de adjuntos vinculada
     }
 
+    //Guardar nota/tarea ============================================================================
     suspend fun saveNotaTarea() {
         if (validateInput()) {
             val currentDetails = notaTareaUiState.notaTareaDetails
@@ -109,8 +108,6 @@ class AddNoteTaskViewModel (
             
             val detailsToSave = currentDetails.copy(
                  // Si es edicion mantenemos la fecha registro original, si es nuevo ponemos now()
-                 // Pero en tu logica de toNotaTarea() si fechaRegistro es null pone now().
-                 // Al cargar, fechaRegistro ya viene con valor.
                  fechaRegistro = currentDetails.fechaRegistro ?: LocalDateTime.now()
             )
             
@@ -120,6 +117,10 @@ class AddNoteTaskViewModel (
             if (isEdit) {
                 repository.updateItem(itemToSave)
                 savedId = itemToSave.id.toLong()
+
+                // Borrar los recordatorios existentes
+                val existingFiles = archivosRepository.getAllArchivosStream(savedId.toInt()).firstOrNull()
+                existingFiles?.forEach { archivosRepository.deleteItem(it) }
                 
                 // Si es tarea, actualizamos recordatorios (estrategia: borrar todos y reinsertar)
                 if (itemToSave.tipo == "task") {
@@ -129,6 +130,7 @@ class AddNoteTaskViewModel (
                     existingReminders.forEach { recordatorioRepository.deleteItem(it) }
                 }
             } else {
+                //se guarda la entidad principal (notaTarea) y se obtiene su id
                 savedId = repository.insertItem(itemToSave)
             }
 
@@ -144,21 +146,31 @@ class AddNoteTaskViewModel (
                 }
             }
 
+            //insertar archivos adjuntos
+            attachments.forEach { adjunto ->
+                val archivoEntity = ArchivosAdjuntos(
+                    notaTareaId = savedId.toInt(),
+                    tipoArchivo = adjunto.tipoArchivo, // "image", "video", etc.
+                    ruta = adjunto.ruta // La URI segura
+                )
+                archivosRepository.insertItem(archivoEntity)
+            }
+
             // Limpiar el estado de recordatorios después de guardar
             recordatoriosList = emptyList()
+            attachments = emptyList()
         }
     }
 
 
     // Fecha de cunmplimienmto y recordaotrios =====================================================
-    // 1. Manejo del Picker de fecha/hora
-    // ESTADOS PARA DATE PICKER
+    //Esatados del Picker de fecha/hora
     var showDatePicker by mutableStateOf(false)
         private set
     var showTimePicker by mutableStateOf(false)
         private set
 
-    // --- ESTADOS SIMPLES PARA EL VALOR SELECCIONADO ---
+    //ESTADOS SIMPLES PARA EL VALOR SELECCIONADO
     var selectedDateMillis: Long? by mutableStateOf(null)
         private set
     var selectedHour: Int by mutableStateOf(0)
@@ -171,7 +183,6 @@ class AddNoteTaskViewModel (
     fun setDatePickerVisibility(show: Boolean) {
         showDatePicker = show
     }
-
     fun setTimePickerVisibility(show: Boolean) {
         showTimePicker = show
     }
@@ -298,22 +309,13 @@ class AddNoteTaskViewModel (
     }
 
 
-
-
-    //ARCHIVOS -=---------------------------------------------------------
+    //ARCHIVOS -=-=============================================================================
     // Listas de rutas de archivos
-    var attachments by mutableStateOf(emptyList<String>())
-        private set
-    var audios by mutableStateOf(emptyList<String>())
+    var attachments by mutableStateOf(emptyList<ArchivoAdjuntoDetails>())
         private set
 
-    // Funciones para actualizar (se usarán en la UI al seleccionar/tomar un archivo)
-    fun addAttachment(path: String) {
-        attachments = attachments + path
-    }
-
-    fun addAudio(path: String) {
-        audios = audios + path
+    fun addAttachment(path: String, tipo: String) {
+        attachments = attachments + ArchivoAdjuntoDetails(ruta = path, tipoArchivo = tipo)
     }
 }
 
@@ -354,6 +356,12 @@ data class ReminderDetails(
 data class RecordatorioDetails(
     val opcionResId: Int, // R.string del recordatorio (Ej: R.string.reminder_5_min)
     val fechaMillis: Long // La fecha/hora exacta en milisegundos calculada
+)
+
+//para guradar temporalmente el archivo en la lista
+data class ArchivoAdjuntoDetails(
+    val ruta: String,
+    val tipoArchivo: String // "image", "video", "audio", "document"
 )
 
 

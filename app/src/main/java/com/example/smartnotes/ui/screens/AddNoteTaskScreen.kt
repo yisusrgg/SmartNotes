@@ -1,6 +1,7 @@
 package com.example.smartnotes.ui.screens
 
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -48,6 +49,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.smartnotes.R
+import com.example.smartnotes.providers.FileProvider
 import com.example.smartnotes.ui.components.AttachmentsSection
 import com.example.smartnotes.ui.navigation.LayoutType
 import com.example.smartnotes.ui.viewmodels.AddNoteTaskViewModel
@@ -82,20 +84,44 @@ fun AddNoteTaskScreen(
     }
 
     val coroutineScope = rememberCoroutineScope()
-
-    //tomar fotos
     val context = LocalContext.current
-    // 1. Declaración del Launcher de Cámara (NECESITA ESTAR AQUÍ)
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
-        bitmap?.let {
-            // Lógica para guardar la imagen en un archivo y obtener la ruta
-            val file = File(context.getExternalFilesDir(null), "img_${System.currentTimeMillis()}.jpg")
-            FileOutputStream(file).use { out -> it.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out) }
-            // 2. Usar la función del ViewModel para guardar la ruta
-            viewModel.addAttachment(file.absolutePath)
+
+    // Foto y video --------------------------------------------------
+    var videoUri: Uri? = null
+    var photoUri: Uri? = null
+
+    //Lanzador de foto
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && photoUri != null) {
+            // Guardar la URI segura en el ViewModel si la foto se tomó con éxito
+            viewModel.addAttachment(photoUri.toString(), "image")
         }
+    }
+    // Lanzador de video
+    val captureVideoLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CaptureVideo()
+    ) { success ->
+        if (success && videoUri != null) {
+            // Guardar la URI segura en el ViewModel si el video se grabó con éxito
+            viewModel.addAttachment(videoUri.toString(), "video")
+        }
+    }
+
+    // FOTO: Obtiene la URI y lanza la cámara
+    val onTakePhotoAction = {
+        // generar la URI segura
+        val newUri = FileProvider.getImageUri(context)
+        photoUri = newUri // Almacena la URI para usarla en el resultado
+        takePictureLauncher.launch(newUri)
+    }
+
+    // VIDEO: Obtiene la URI  y lanza la cámara para video
+    val onTakeVideoAction = {
+        val newUri = FileProvider.getImageUri(context)
+        videoUri = newUri
+        captureVideoLauncher.launch(newUri)
     }
 
     Scaffold(
@@ -135,8 +161,8 @@ fun AddNoteTaskScreen(
             viewModel = viewModel,
             tipo = notaTareaDetails.tipo, // Pasar el TIPO (0 o 1) del estado
             onDone = onDone,
-            //onTakePhoto = { cameraLauncher.launch(null) },
-            onTakePhoto = { /* Handle camara photo */ },
+            onTakePhoto = onTakePhotoAction,
+            onCaptureVideo = onTakeVideoAction,
             onSelectFile = { /* Handle file selection */ },
             onRecordAudio = { /* Handle audio recording */ }
         )
@@ -208,6 +234,7 @@ fun NoteTaskBody(
     onDone: () -> Unit,
     tipo: String,
     onTakePhoto: () -> Unit,
+    onCaptureVideo: () -> Unit,
     onSelectFile: () -> Unit,
     onRecordAudio: () -> Unit
 ){
@@ -253,11 +280,11 @@ fun NoteTaskBody(
         AttachmentsSection(
             viewModel = viewModel,
             onTakePhotoClick = onTakePhoto,
+            onCaptureVideoClick = onCaptureVideo,
             onSelectFileClick = onSelectFile,
             onRecordAudioClick = onRecordAudio
         )
 
-        // Espacio extra al final para asegurar que se vea todo bien
         Spacer(modifier = Modifier.height(32.dp))
     }
 }
@@ -282,11 +309,6 @@ fun TaskFieldsSection(
             .clickable {
                 viewModel.setDatePickerVisibility(true)
             })
-        /*Box(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-            TextButton(onClick = { viewModel.showDatePicker = true }) {
-                Text("Seleccionar fecha/hora")
-            }
-        }*/
     }
 }
 

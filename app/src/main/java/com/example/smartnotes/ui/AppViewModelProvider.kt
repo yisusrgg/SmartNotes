@@ -25,7 +25,8 @@ object AppViewModelProvider {
             val container = smartNotesApplication().container
             ItemsListViewModel(
                 notasTareasRepository = container.notasTareasRepository,
-                archivosRepository = container.archivosRepository
+                archivosRepository = container.archivosRepository,
+                recordatoriosRepository = container.recordatoriosRepository
             )
         }
 

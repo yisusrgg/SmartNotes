@@ -53,9 +53,11 @@ fun TasksScreen(
     }
 
     val filteredItems = remember(items, selectedTab, searchQuery) {
-        val itemsByType = if (selectedTab == 0)
-            items.filterIsInstance<NotaTareaUiModel.Task>()
-        else items.filterIsInstance<NotaTareaUiModel.Note>()
+        val itemsByType =
+            if (selectedTab == 0)
+                items.filterIsInstance<NotaTareaUiModel.Task>()
+            else
+                items.filterIsInstance<NotaTareaUiModel.Note>()
         if (searchQuery.isNotBlank()) {
             itemsByType.filter { it.title.contains(searchQuery, ignoreCase = true) }
         } else {
@@ -228,7 +230,6 @@ fun ExpandedTasksLayout(
 
 
 // --- Composables de Detalle (extraídos de DetailScreen) ---
-
 @Composable
 fun ItemDetailView(
     item: NotaTareaUiModel,
@@ -248,35 +249,6 @@ fun ItemDetailView(
     }
 }
 
-@Composable
-fun DetailContent(item: NotaTareaUiModel) {
-    val isTask = item is NotaTareaUiModel.Task
-    val taskItem = item as? NotaTareaUiModel.Task
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = item.title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-
-            if (isTask && taskItem != null) {
-                Text("${stringResource(R.string.date_label)}: ${taskItem.dateTimeText}", style = MaterialTheme.typography.bodySmall)
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = item.description,
-                style = MaterialTheme.typography.bodyLarge
-            )
-        }
-    }
-}
 
 @Composable
 fun ActionsAndMedia(
@@ -293,23 +265,9 @@ fun ActionsAndMedia(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        if (item.attachments.isNotEmpty()) {
-            Text(
-                "${stringResource(R.string.attachments_label)}:",
-                style = MaterialTheme.typography.bodyLarge
-            )
-            LazyRow {
-                items(item.attachments) { path ->
-                    AsyncImage(
-                        model = path,
-                        contentDescription = null,
-                        modifier = Modifier.size(100.dp).padding(4.dp)
-                    )
-                }
-            }
-        }
 
-        if (item.audios.isNotEmpty()) {
+
+        /*if (item.audios.isNotEmpty()) {
             Text("Audios:", style = MaterialTheme.typography.bodyMedium)
             LazyRow {
                 items(item.audios) { path ->
@@ -324,7 +282,7 @@ fun ActionsAndMedia(
                     }
                 }
             }
-        }
+        }*/
 
         Spacer(modifier = Modifier.weight(1f))
 

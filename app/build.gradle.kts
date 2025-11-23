@@ -70,6 +70,13 @@ dependencies {
     ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
     implementation("androidx.room:room-ktx:${rootProject.extra["room_version"]}")
 
+    // Jetpack Compose
+    implementation("androidx.compose.ui:ui:1.0.5")
+    implementation("androidx.compose.material:material:1.0.5")
+    implementation("androidx.compose.ui:ui-tooling:1.0.5")
+    // ExoPlayer
+    implementation("com.google.android.exoplayer:exoplayer:2.15.1")
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

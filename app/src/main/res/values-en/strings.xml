@@ -34,8 +34,10 @@
 
     <!-- DetailScreen -->
     <string name="date_label">Date</string>
+    <string name="nodate_label">No date</string>
     <string name="reminder_detail_label">Reminder</string>
     <string name="play_audio_description">Play</string>
+    <string name="pause">Pause</string>
 
     <!-- Reminder Options -->
     <string name="reminder_none">No reminder</string>

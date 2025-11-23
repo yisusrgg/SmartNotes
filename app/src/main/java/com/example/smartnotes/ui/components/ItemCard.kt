@@ -25,6 +25,13 @@ fun ItemCard(
 ) {
     val isTask = item is NotaTareaUiModel.Task
     val isCompleted = if (isTask) (item as NotaTareaUiModel.Task).completed else false
+    // 1. Acceder a la lista de archivos adjuntos (depende del tipo)
+    val archivosAdjuntos = when (item) {
+        is NotaTareaUiModel.Task -> item.attachments
+        is NotaTareaUiModel.Note -> item.attachments
+    }
+    //Filtrar la lista unificada para obtener solo los audios
+    val audios = archivosAdjuntos.filter { it.tipoArchivo == "audio" }
 
     Card(
         modifier = Modifier
@@ -96,20 +103,20 @@ fun ItemCard(
                         )
                     }
                 }
-                if (item.audios.isNotEmpty()) {
+                if (audios.isNotEmpty()) {
                     BadgedBox(
                         badge = {
-                            if (item.audios.size > 1) {
+                            if (audios.size > 1) {
                                 Badge(
                                     containerColor = MaterialTheme.colorScheme.primary,
                                     contentColor = MaterialTheme.colorScheme.onPrimary
-                                ) { Text("${item.audios.size}", fontSize = 10.sp) }
+                                ) { Text("${audios.size}", fontSize = 10.sp) }
                             }
                         }
                     ) {
                         Icon(
                             imageVector = Icons.Default.Mic,
-                            contentDescription = "Audios (${item.audios.size})",
+                            contentDescription = "Audios (${audios.size})",
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -120,51 +127,4 @@ fun ItemCard(
             }
         }
     }
-}
-
-// EN: .../ui/components/ItemCard.kt
-
-// PRIMERA PREVIEW (Esta ya está correcta)
-@Preview(showBackground = true)
-@Composable
-fun ItemCardPreview() {
-    // Creas una instancia de NotaTareaUiModel.Task, lo cual es correcto.
-    val sampleTask = NotaTareaUiModel.Task(
-        id="0",
-        title = "Hacer la compra de la semana",
-        description = "no se",
-        dateTimeText = "Mañana a las 10:00 AM",
-        completed = false,
-        attachments = listOf("lista_compra.pdf"), // Ejemplo con un adjunto
-        audios = listOf("recordatorio.mp3", "otro_audio.mp3") // Ejemplo con dos audios
-    )
-
-    ItemCard(
-        item = sampleTask,
-        onCheckedChange = {},
-        onClick = {},
-        onDelete = {}
-    )
-}
-
-// SEGUNDA PREVIEW (CORREGIDA)
-@Preview(showBackground = true)
-@Composable
-fun NoteCardPreview() {
-    // CORRECCIÓN: Crea una instancia de 'NotaTareaUiModel.Note'
-    val sampleNote = NotaTareaUiModel.Note(
-        id="0",
-        title = "Idea para nuevo proyecto",
-        description = "Investigar Firebase Realtime Database",
-        attachments = emptyList(),
-        audios = emptyList()
-    )
-
-    // Ahora le estás pasando el tipo correcto a la función
-    ItemCard(
-        item = sampleNote,
-        onCheckedChange = {},
-        onClick = {},
-        onDelete = {}
-    )
 }
