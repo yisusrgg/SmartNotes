@@ -50,7 +50,7 @@ class AddNoteTaskViewModel (
         }
     }
 
-    // FUNCIÓN NECESARIA: Para actualizar el tipo al abrir la pantalla.
+    // Actualizar el tipo al abrir la pantalla.
     fun setType(type: String) {
         // 1.Crear un estado base LIMPIO, copiando los valores iniciales.
         // 2. Sobreescribir solo el campo 'tipo' con el valor recibido.
@@ -119,14 +119,14 @@ class AddNoteTaskViewModel (
                 savedId = itemToSave.id.toLong()
 
                 // Borrar los recordatorios existentes
-                val existingFiles = archivosRepository.getAllArchivosStream(savedId.toInt()).firstOrNull()
-                existingFiles?.forEach { archivosRepository.deleteItem(it) }
+                /*val existingFiles = archivosRepository.getAllArchivosStream(savedId.toInt()).firstOrNull()
+                existingFiles?.forEach { archivosRepository.deleteItem(it) }*/
                 
                 // Si es tarea, actualizamos recordatorios (estrategia: borrar todos y reinsertar)
                 if (itemToSave.tipo == "task") {
-                    // 1. Obtener los existentes
+                    // Obtener los existentes
                     val existingReminders = recordatorioRepository.getAllRecordatoriosStream(savedId.toInt()).first()
-                    // 2. Borrarlos
+                    // Borrarlos
                     existingReminders.forEach { recordatorioRepository.deleteItem(it) }
                 }
             } else {

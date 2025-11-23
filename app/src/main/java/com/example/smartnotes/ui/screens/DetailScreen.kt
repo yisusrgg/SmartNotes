@@ -167,14 +167,7 @@ fun VideoPlayer(videoUri: Uri, modifier: Modifier = Modifier.fillMaxWidth()) {
         modifier = Modifier
             //.align(Alignment.BottomEnd)
             .padding(16.dp)
-    ) {
-        /*Icon(
-            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-            contentDescription = (if (isPlaying) R.string.pause
-            else R.string.play_audio_description).toString(),
-
-        )*/
-    }
+    ) { }
 }
 
 
@@ -225,8 +218,6 @@ fun AttachmentsDisplay(
 ) {
     val archivos = item.attachments
     if (archivos.isEmpty()) return
-    // Estado que guarda la URI del archivo (imagen o video)
-    var expandedMediaUri by remember { mutableStateOf<String?>(null) }
 
     Text(
         "${stringResource(R.string.attachments_label)}:",
