@@ -2,6 +2,8 @@
 
 package com.example.smartnotes.ui.screens
 
+import android.R.attr.contentDescription
+import android.R.attr.tint
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -49,6 +51,7 @@ import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
 import android.media.MediaPlayer
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Videocam
@@ -127,21 +130,7 @@ fun DetailContent(item: NotaTareaUiModel) {
                 style = MaterialTheme.typography.bodyLarge
             )
             Spacer(modifier = Modifier.height(12.dp))
-            if (item.attachments.isNotEmpty()) {
-                Text(
-                    "${stringResource(R.string.attachments_label)}:",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                LazyRow {
-                    items(item.attachments) { path ->
-                        AsyncImage(
-                            model = path,
-                            contentDescription = null,
-                            modifier = Modifier.size(100.dp).padding(4.dp)
-                        )
-                    }
-                }
-            }
+            AttachmentsDisplay(item = item)
         }
     }
 }
@@ -179,12 +168,12 @@ fun VideoPlayer(videoUri: Uri, modifier: Modifier = Modifier.fillMaxWidth()) {
             //.align(Alignment.BottomEnd)
             .padding(16.dp)
     ) {
-        Icon(
-            imageVector = if (isPlaying) Icons.Filled.Refresh else Icons.Filled.PlayArrow,
-            contentDescription = if (isPlaying) "Pause" else "Play",
-            tint = Color.White,
-            modifier = Modifier.size(48.dp)
-        )
+        /*Icon(
+            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+            contentDescription = (if (isPlaying) R.string.pause
+            else R.string.play_audio_description).toString(),
+
+        )*/
     }
 }
 
@@ -236,7 +225,8 @@ fun AttachmentsDisplay(
 ) {
     val archivos = item.attachments
     if (archivos.isEmpty()) return
-    val scrollState = rememberScrollState()
+    // Estado que guarda la URI del archivo (imagen o video)
+    var expandedMediaUri by remember { mutableStateOf<String?>(null) }
 
     Text(
         "${stringResource(R.string.attachments_label)}:",
@@ -244,44 +234,29 @@ fun AttachmentsDisplay(
         modifier = Modifier.padding(bottom = 8.dp)
     )
 
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        items(archivos) { archivo ->
-            // Usamos un Box para poder superponer elementos (como el icono de Video o el botón de Play)
+        archivos.forEach {  archivo ->
+            val isMedia = archivo.tipoArchivo == "image" || archivo.tipoArchivo == "video"
             Box(
                 modifier = Modifier
-                    .size(100.dp),
+                    .size(160.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // Usamos 'when' para decidir qué mostrar según el tipo de archivo
                 when (archivo.tipoArchivo) {
                     "image", "video" -> {
-                        // Usamos AsyncImage para mostrar el thumbnail o frame del video/imagen
                         AsyncImage(
                             model = archivo.ruta,
                             contentDescription = archivo.tipoArchivo,
                             modifier = Modifier
                                 .matchParentSize()
                         )
-                        // Si es video, superponemos un icono de reproducción
+
                         if (archivo.tipoArchivo == "video") {
-                            //reproducir video
-                            val action = VideoPlayer(videoUri = Uri.parse(archivo.ruta))
-                            IconButton(
-                                onClick = {
-                                    action
-                                },
-                                modifier = Modifier
-                                    .size(24.dp)
-                            ) {
-                                Icon(
-                                    Icons.Filled.Videocam,
-                                    contentDescription = "Video",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(48.dp)
-                                )
-                            }
+                            VideoPlayer(videoUri = Uri.parse(archivo.ruta))
                         }
                     }
                     "audio" -> {
@@ -307,4 +282,5 @@ fun AttachmentsDisplay(
             }
         }
     }
+
 }

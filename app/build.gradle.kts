@@ -76,7 +76,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling:1.0.5")
     // ExoPlayer
     implementation("com.google.android.exoplayer:exoplayer:2.15.1")
-
+    implementation("androidx.compose.material3.adaptive:adaptive-layout:1.0.0-beta03")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
