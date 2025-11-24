@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <files-path name="images_internal" path="images/"/>
+    <!-- Para fotos tomadas con la cámara (cache/images) -->
     <cache-path name="images_cache" path="images/" />
+    <cache-path name="videos_cache" path="videos/" />
+    
+    <!-- Para archivos guardados internamente en context.filesDir (attachments) -->
+    <files-path name="attachments_files" path="attachments/" />
+    
+    <!-- Respaldo para la raíz de files -->
+    <files-path name="internal_files" path="." />
+    
+    <!-- Para almacenamiento externo si fuera necesario -->
+    <external-path name="external_files" path="." />
 </paths>

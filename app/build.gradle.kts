@@ -59,6 +59,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material3.window.size.class1)
+    implementation(libs.androidx.compose.foundation.layout)
     //implementation(libs.androidx.room.common.jvm)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
