@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -69,7 +70,6 @@ import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
 import android.media.MediaPlayer
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -141,7 +141,54 @@ fun DetailContent(item: NotaTareaUiModel) {
                 Text("${stringResource(R.string.date_label)}: ${taskItem.dateTimeText}",
                     style = MaterialTheme.typography.bodySmall
                 )
+                
+                // --- Visualización de Recordatorios ---
+                if (taskItem.reminders.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.reminder_detail_label), // Usando recurso de string
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    taskItem.reminders.forEach { reminder ->
+                        Row(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Recordatorio",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            
+                            // Opción (ej: "10 min antes")
+                            Text(
+                                text = stringResource(id = reminder.opcionResId),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            
+                            Spacer(modifier = Modifier.width(8.dp))
+                            
+                            // Hora exacta
+                            val formattedTime = java.time.Instant.ofEpochMilli(reminder.fechaMillis)
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm"))
+                                
+                            Text(
+                                text = "($formattedTime)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
+            
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = item.description,
@@ -272,7 +319,6 @@ fun AudioPlayer(audioUri: String, modifier: Modifier = Modifier) {
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AttachmentsDisplay(
     item : NotaTareaUiModel
