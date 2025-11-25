@@ -35,7 +35,7 @@
     <!-- DetailScreen -->
     <string name="date_label">Fecha</string>
     <string name="nodate_label">Sin fecha</string>
-    <string name="reminder_detail_label">Recordatorio</string>
+    <string name="reminder_detail_label">Recordatorios</string>
     <string name="play_audio_description">Reproducir</string>
     <string name="pause">Pausar</string>
 
@@ -49,7 +49,8 @@
     <string name="reminder_1_day">1 día antes</string>
     <string name="reminders_added_label">Recordatorios a guardar:</string>
     <string name="add_reminder_button">Agregar recordatorio</string>
-
+    <string name="channel_name">Recordatorios de Tareas</string>
+    <string name="channel_description">Canal para notificaciones de recordatorios de tareas</string>
 
 
 </resources>

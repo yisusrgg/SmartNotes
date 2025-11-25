@@ -1,7 +1,9 @@
 package com.example.smartnotes.ui.screens
 
 
+import android.Manifest
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -43,6 +45,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -278,7 +281,22 @@ fun NoteTaskBody(
             TaskFieldsSection(viewModel = viewModel)
             Spacer(Modifier.height(12.dp))
             val isDateSet = viewModel.notaTareaUiState.notaTareaDetails.fechaCumplimiento != null
-            if(isDateSet) RemindersSection(viewModel = viewModel)
+            if(isDateSet) {
+                val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission()
+                ) { isGranted ->
+                    // ...
+                }
+
+                // Llamar a esto cuando el usuario entra a la pantalla o intenta guardar un recordatorio
+                LaunchedEffect(Unit) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+                RemindersSection(viewModel = viewModel)
+            }
+
         }
         Spacer(modifier = Modifier.height(16.dp))
 

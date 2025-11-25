@@ -34,7 +34,7 @@ class FileProvider : FileProvider(
             // Crea un archivo temporal para el audio (.m4a común y ligero)
             val fileAudio = File.createTempFile("audio_", ".m4a", dirAudio)
 
-            // 3. Devolvemos el objeto File. La conversión a URI segura (content://)
+            // Devolvemos el objeto File. La conversión a URI segura (content://)
             // se hará DENTRO del ViewModel, justo después de detener la grabación.
             return fileAudio
         }

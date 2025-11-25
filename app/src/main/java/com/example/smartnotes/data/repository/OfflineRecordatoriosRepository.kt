@@ -13,7 +13,7 @@ class OfflineRecordatoriosRepository(
     override fun getRecordatoriStream(id: Int): Flow<Recordatorios?> =
         recordatoriosDao.getRecordatorio(id)
 
-    override suspend fun insertItem(item: Recordatorios) =
+    override suspend fun insertItem(item: Recordatorios): Long =
         recordatoriosDao.insert(item)
 
     override suspend fun deleteItem(item: Recordatorios) =

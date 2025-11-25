@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface RecordatoriosDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(recordatorio: Recordatorios)
+    suspend fun insert(recordatorio: Recordatorios): Long //devulve el id
 
     @Update
     suspend fun update(recordatorio: Recordatorios)

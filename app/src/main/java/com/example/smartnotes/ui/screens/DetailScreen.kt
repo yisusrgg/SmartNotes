@@ -155,9 +155,9 @@ fun DetailContent(item: NotaTareaUiModel) {
                 if (taskItem.reminders.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = stringResource(R.string.reminder_detail_label), // Usando recurso de string
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        text = "${stringResource(R.string.reminder_detail_label)}:",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.secondary
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     
@@ -330,8 +330,9 @@ fun AttachmentsDisplay(
 
     Text(
         "${stringResource(R.string.attachments_label)}:",
-        style = MaterialTheme.typography.bodyLarge,
-        modifier = Modifier.padding(bottom = 8.dp)
+        //style = MaterialTheme.typography.titleMedium,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.secondary
     )
 
     //Mostrar audios

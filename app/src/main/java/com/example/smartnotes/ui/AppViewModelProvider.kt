@@ -6,6 +6,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.smartnotes.SmartNotesApplication
+import com.example.smartnotes.alarmas.AndroidAlarmScheduler
 import com.example.smartnotes.ui.viewmodels.AddNoteTaskViewModel
 import com.example.smartnotes.ui.viewmodels.ItemsListViewModel
 
@@ -33,11 +34,13 @@ object AppViewModelProvider {
         // Inicializador para AddNoteTaskViewModel
         initializer {
             val container = smartNotesApplication().container
+            val app = smartNotesApplication()
             AddNoteTaskViewModel(
                 repository = container.notasTareasRepository,
                 archivosRepository = container.archivosRepository,
                 recordatorioRepository = container.recordatoriosRepository,
-                context = smartNotesApplication()
+                context = smartNotesApplication(),
+                alarmScheduler = AndroidAlarmScheduler(app)
             )
         }
     }

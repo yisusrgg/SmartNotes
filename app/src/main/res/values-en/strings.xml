@@ -35,7 +35,7 @@
     <!-- DetailScreen -->
     <string name="date_label">Date</string>
     <string name="nodate_label">No date</string>
-    <string name="reminder_detail_label">Reminder</string>
+    <string name="reminder_detail_label">Reminders</string>
     <string name="play_audio_description">Play</string>
     <string name="pause">Pause</string>
 
@@ -49,6 +49,8 @@
     <string name="reminder_1_day">1 day before</string>
     <string name="reminders_added_label">Reminders to save:</string>
     <string name="add_reminder_button">Add reminder</string>
+    <string name="channel_name">Reminders of Tasks</string>
+    <string name="channel_description">Channel for task reminder notifications</string>
 
 
 </resources>

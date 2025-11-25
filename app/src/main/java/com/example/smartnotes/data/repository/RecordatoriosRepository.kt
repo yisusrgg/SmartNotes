@@ -10,8 +10,8 @@ interface RecordatoriosRepository {
     /**Retrieve an recordatorio from the given data source that matches with the [id].*/
     fun getRecordatoriStream(id: Int): Flow<Recordatorios?>
 
-    /**Insert item in the data source */
-    suspend fun insertItem(item: Recordatorios)
+    /**Insert item in the data source and return id*/
+    suspend fun insertItem(item: Recordatorios): Long
 
     /**Delete item from the data source*/
     suspend fun deleteItem(item: Recordatorios)

@@ -7,6 +7,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.example.smartnotes.R
+import com.example.smartnotes.alarmas.AlarmItem
+import com.example.smartnotes.alarmas.AlarmScheduler
 import com.example.smartnotes.data.entities.ArchivosAdjuntos
 import com.example.smartnotes.data.entities.NotasTareas
 import com.example.smartnotes.data.entities.Recordatorios
@@ -33,7 +35,8 @@ class AddNoteTaskViewModel (
     private val repository: NotasTareasRepository,
     private val recordatorioRepository: RecordatoriosRepository,
     private val archivosRepository: ArchivosRepository,
-    private val context: Context
+    private val context: Context,
+    private val alarmScheduler: AlarmScheduler
 ) : ViewModel() {
     /**
      * Holds current item ui state
@@ -146,13 +149,34 @@ class AddNoteTaskViewModel (
 
             // Insertar los nuevos recordatorios
             if (itemToSave.tipo == "task") {
-                 recordatoriosList.forEach { reminder ->
+                recordatoriosList.forEach { reminder ->
                     val recordatorioEntity = Recordatorios(
                         tareaId = savedId.toInt(),
                         fecha = reminder.fechaMillis,
                         opcion = reminder.opcionResId
                     )
-                    recordatorioRepository.insertItem(recordatorioEntity)
+
+                    // Ahora esto funcionará correctamente:
+                    val insertReminder = recordatorioRepository.insertItem(recordatorioEntity)
+                    val reminderId = insertReminder.toInt()
+
+                    //Recordatroios
+                    // Programas la alarma
+                    val alarmTime = java.time.Instant.ofEpochMilli(reminder.fechaMillis)
+                        .atZone(java.time.ZoneId.systemDefault())
+                        .toLocalDateTime()
+
+                    // Solo programar si la fecha es futura
+                    if (alarmTime.isAfter(LocalDateTime.now())) {
+                        val alarmItem = AlarmItem(
+                            alarmTime = alarmTime,
+                            message = "Tienes pendiente: ${itemToSave.descripcion.take(20)}...",
+                            title = itemToSave.titulo,
+                            taskId = savedId.toInt(),
+                            reminderId = reminderId //Usar ID de BD para unicidad
+                        )
+                        alarmScheduler.schedule(alarmItem)
+                    }
                 }
             }
 
