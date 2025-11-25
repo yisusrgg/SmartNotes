@@ -239,6 +239,20 @@ class AddNoteTaskViewModel (
 
         this.selectedHour = hour
         this.selectedMinute = minute
+
+        // RECALCULAR RECORDATORIOS AL CAMBIAR LA FECHA
+        recalcularRecordatorios(newDateTime)
+    }
+
+    // Función para recalcular todos los recordatorios existentes con la nueva fecha base
+    private fun recalcularRecordatorios(newCumplimiento: LocalDateTime) {
+        if (recordatoriosList.isEmpty()) return
+
+        // Mapeamos la lista actual a una nueva lista con las fechas actualizadas
+        recordatoriosList = recordatoriosList.map { reminder ->
+            val newMillis = calcularFechaRecordatorio(reminder.opcionResId, newCumplimiento)
+            reminder.copy(fechaMillis = newMillis)
+        }
     }
 
     private fun convertMillisToLocalDateTime(

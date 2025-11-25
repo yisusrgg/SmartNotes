@@ -54,6 +54,7 @@ fun SmartNotesNavHost(navController: NavHostController, windowSizeClass: WindowW
                 viewModel = vmIL,
                 onAddClick = { type -> navController.navigate(Screen.Add.createRoute(type)) },
                 onDetailClick = { id -> navController.navigate(Screen.Detail.createRoute(id)) },
+                onEditClick = { id -> navController.navigate(Screen.Edit.createRoute(id)) }, // Nuevo parámetro para editar
                 layoutType = layoutType
             )
         }

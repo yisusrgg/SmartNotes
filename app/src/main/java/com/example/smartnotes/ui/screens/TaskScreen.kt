@@ -36,6 +36,7 @@ fun TasksScreen(
     viewModel: ItemsListViewModel,
     onAddClick: (String) -> Unit,
     onDetailClick: (String) -> Unit,
+    onEditClick: (String) -> Unit, // Nuevo parámetro
     layoutType: LayoutType
 ) {
     val items by viewModel.itemsUiState.collectAsState()
@@ -114,6 +115,7 @@ fun TasksScreen(
                         onItemClick = { itemId ->
                             selectedItemId = itemId
                         },
+                        onEditClick = onEditClick, // Pasar callback
                         onTaskCompleted = {
                             selectedItemId = null // Clear selection
                         }
@@ -181,12 +183,14 @@ fun CompactTasksLayout(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpandedTasksLayout(
     filteredItems: List<NotaTareaUiModel>,
     viewModel: ItemsListViewModel,
     selectedItem: NotaTareaUiModel?,
     onItemClick: (String) -> Unit,
+    onEditClick: (String) -> Unit, // Callback para editar
     onTaskCompleted: () -> Unit
 ) {
     Row(Modifier.fillMaxSize()) {
@@ -207,14 +211,35 @@ fun ExpandedTasksLayout(
             color = MaterialTheme.colorScheme.outlineVariant
         )
 
-        // Panel derecho: Vista de detalle
+        // Panel derecho: Vista de detalle CON HEADER DE EDICIÓN
         Box(modifier = Modifier.weight(0.6f)) {
             if (selectedItem != null) {
-                ItemDetailView(
-                    item = selectedItem,
-                    viewModel = viewModel,
-                    onTaskCompleted = onTaskCompleted
-                )
+                Scaffold(
+                    topBar = {
+                        TopAppBar(
+                            title = { Text(selectedItem.title) },
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.surface, // Diferente color para distinguir panel
+                                titleContentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            actions = {
+                                IconButton(onClick = { onEditClick(selectedItem.id) }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = stringResource(R.string.edit_button_description)
+                                    )
+                                }
+                            }
+                        )
+                    }
+                ) { paddingValues ->
+                    ItemDetailView(
+                        item = selectedItem,
+                        viewModel = viewModel,
+                        onTaskCompleted = onTaskCompleted,
+                        modifier = Modifier.padding(paddingValues)
+                    )
+                }
             } else {
                 // Placeholder cuando no hay nada seleccionado
                 Box(
