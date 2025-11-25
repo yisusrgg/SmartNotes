@@ -83,7 +83,7 @@ fun ItemCard(
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 if (item.attachments.isNotEmpty()) {
                     BadgedBox(
@@ -99,24 +99,6 @@ fun ItemCard(
                         Icon(
                             imageVector = Icons.Default.AttachFile,
                             contentDescription = "Adjuntos (${item.attachments.size})",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-                if (audios.isNotEmpty()) {
-                    BadgedBox(
-                        badge = {
-                            if (audios.size > 1) {
-                                Badge(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
-                                ) { Text("${audios.size}", fontSize = 10.sp) }
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Mic,
-                            contentDescription = "Audios (${audios.size})",
                             modifier = Modifier.size(20.dp)
                         )
                     }

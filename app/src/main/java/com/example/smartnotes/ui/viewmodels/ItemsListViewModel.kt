@@ -1,11 +1,13 @@
 package com.example.smartnotes.ui.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartnotes.data.entities.NotasTareas
 import com.example.smartnotes.data.repository.ArchivosRepository
 import com.example.smartnotes.data.repository.NotasTareasRepository
 import com.example.smartnotes.data.repository.RecordatoriosRepository
+import com.example.smartnotes.ui.components.AndroidAudioPlayer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +26,8 @@ import java.util.Locale
 class ItemsListViewModel(
     private val notasTareasRepository: NotasTareasRepository,
     private val archivosRepository: ArchivosRepository,
-    private val recordatoriosRepository: RecordatoriosRepository
+    private val recordatoriosRepository: RecordatoriosRepository,
+    private val context: Context
 ) : ViewModel() {
 
     // Combina los flujos de Notas y Tareas de la base de datos
@@ -82,6 +85,11 @@ class ItemsListViewModel(
                 notasTareasRepository.deleteItem(itemToDelete)
             }
         }
+    }
+
+    //AUDIOS --------------
+    private val player by lazy {
+        AndroidAudioPlayer(context)
     }
 }
 

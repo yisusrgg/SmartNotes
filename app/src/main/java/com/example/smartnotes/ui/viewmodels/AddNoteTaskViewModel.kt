@@ -13,6 +13,9 @@ import com.example.smartnotes.data.entities.Recordatorios
 import com.example.smartnotes.data.repository.ArchivosRepository
 import com.example.smartnotes.data.repository.NotasTareasRepository
 import com.example.smartnotes.data.repository.RecordatoriosRepository
+import com.example.smartnotes.providers.FileProvider
+import com.example.smartnotes.ui.components.AndroidAudioPlayer
+import com.example.smartnotes.ui.components.AndroidAudioRecorder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -29,7 +32,8 @@ import java.util.UUID
 class AddNoteTaskViewModel (
     private val repository: NotasTareasRepository,
     private val recordatorioRepository: RecordatoriosRepository,
-    private val archivosRepository: ArchivosRepository
+    private val archivosRepository: ArchivosRepository,
+    private val context: Context
 ) : ViewModel() {
     /**
      * Holds current item ui state
@@ -97,7 +101,7 @@ class AddNoteTaskViewModel (
              }
         }
 
-        // 3. CARGAR ADJUNTOS EXISTENTES DE LA BD (Corrección restaurada)
+        // CARGAR ADJUNTOS EXISTENTES DE LA BD
         // Esto permite ver las fotos/videos que ya estaban guardados
         val existingFiles = archivosRepository.getAllArchivosStream(id).first()
         attachments = existingFiles.map {
@@ -125,12 +129,12 @@ class AddNoteTaskViewModel (
 
                 // ESTRATEGIA DE EDICIÓN: Borrar antiguos y reinsertar los actuales
                 
-                // 1. Borrar archivos adjuntos previos en BD
+                // Borrar archivos adjuntos previos en BD
                 // Esto asegura que si eliminaste un adjunto de la lista, se borre de la BD
                 val existingFiles = archivosRepository.getAllArchivosStream(savedId.toInt()).first()
                 existingFiles.forEach { archivosRepository.deleteItem(it) }
                 
-                // 2. Si es tarea, borrar recordatorios previos en BD
+                // Si es tarea, borrar recordatorios previos en BD
                 if (itemToSave.tipo == "task") {
                     val existingReminders = recordatorioRepository.getAllRecordatoriosStream(savedId.toInt()).first()
                     existingReminders.forEach { recordatorioRepository.deleteItem(it) }
@@ -294,6 +298,46 @@ class AddNoteTaskViewModel (
     // ARCHIVOS ADJUNTOS =====================================================================
     var attachments by mutableStateOf(emptyList<ArchivoAdjuntoDetails>())
         private set
+
+    // Audios -------------
+    private val recordet by lazy {
+        AndroidAudioRecorder(context)
+    }
+
+    // Estado para rastrear si se está grabando
+    var isRecording by mutableStateOf(false)
+        private set
+
+    // Almacenar el archivo de audio actual (el objeto File antes de guardarse)
+    private var currentAudioFile: File? = null
+
+    fun startRecording(context: Context) {
+        if (isRecording) return
+
+        // Obtiene el objeto File del FileProvider
+        val fileAudio = FileProvider.getAudioUri(context)
+
+        currentAudioFile = fileAudio
+        recordet.start(fileAudio)
+        isRecording = true
+    }
+    fun stopRecording() {
+        if (!isRecording) return
+
+        recordet.stop()
+
+        currentAudioFile?.let { file ->
+            // Guarda la RUTA ABSOLUTA (String) del archivo local.
+            val absolutePath = file.absolutePath
+
+            // addAttachment lo guarda para la BD
+            addAttachment(absolutePath, "audio")
+        }
+
+        currentAudioFile = null
+        isRecording = false
+    }
+
 
     // Agregar adjunto simple
     fun addAttachment(path: String, tipo: String) {

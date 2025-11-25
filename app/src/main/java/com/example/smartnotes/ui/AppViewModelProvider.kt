@@ -19,46 +19,26 @@ fun CreationExtras.smartNotesApplication(): SmartNotesApplication =
 object AppViewModelProvider {
     val Factory = viewModelFactory {
 
-        // 1. Inicializador para ItemsListViewModel
-        // Este ViewModel necesita ambos repositorios
+        // Inicializador para ItemsListViewModel
         initializer {
             val container = smartNotesApplication().container
             ItemsListViewModel(
                 notasTareasRepository = container.notasTareasRepository,
                 archivosRepository = container.archivosRepository,
-                recordatoriosRepository = container.recordatoriosRepository
+                recordatoriosRepository = container.recordatoriosRepository,
+                context = smartNotesApplication()
             )
         }
 
-        // 2. Inicializador para AddNoteTaskViewModel
-        // Este ViewModel solo necesita el NotasTareasRepository
+        // Inicializador para AddNoteTaskViewModel
         initializer {
             val container = smartNotesApplication().container
             AddNoteTaskViewModel(
                 repository = container.notasTareasRepository,
                 archivosRepository = container.archivosRepository,
-                recordatorioRepository = container.recordatoriosRepository
+                recordatorioRepository = container.recordatoriosRepository,
+                context = smartNotesApplication()
             )
         }
-
-        /*initializer {
-            val container = smartNotesApplication().container
-            EditNoteTaskViewModel(
-                savedStateHandle = this.createSavedStateHandle(), // Para el ID
-                notasTareasRepository = container.notasTareasRepository,
-                archivosRepository = container.archivosRepository,
-                recordatoriosRepository = container.recordatoriosRepository
-            )
-        }*/
-
-        /* // 3. Inicializador para DetailScreenViewModel (si creas uno)
-        initializer {
-            DetailScreenViewModel(
-                this.createSavedStateHandle(), // Si necesitas el SavedStateHandle para el ID
-                smartNotesApplication().container.notasTareasRepository,
-                smartNotesApplication().container.archivosRepository
-            )
-        }
-        */
     }
 }

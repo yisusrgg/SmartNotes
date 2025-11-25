@@ -109,6 +109,7 @@ fun AddNoteTaskScreen(
         }
     }
 
+    //ACCIONES DE LOS NOTETASKBODY =================================================
     // FOTO: Obtiene la URI y lanza la cámara
     val onTakePhotoAction = {
         // generar la URI segura
@@ -123,6 +124,11 @@ fun AddNoteTaskScreen(
         videoUri = newUri
         captureVideoLauncher.launch(newUri)
     }
+
+    val onRecordAudio ={
+        viewModel.startRecording(context)
+    }
+    //========================================================
 
     Scaffold(
         topBar = {
@@ -164,7 +170,7 @@ fun AddNoteTaskScreen(
             onTakePhoto = onTakePhotoAction,
             onCaptureVideo = onTakeVideoAction,
             onSelectFile = { /* Handle file selection */ },
-            onRecordAudio = { /* Handle audio recording */ }
+            onRecordAudio = onRecordAudio
         )
     }
     // --- ESTADOS DE COMPOSE PARA LOS PICKERS ---

@@ -15,15 +15,28 @@ class FileProvider : FileProvider(
             val dirIma = File(ctx.cacheDir, "images")
             dirIma.mkdirs() // Crea el directorio si no existe
 
-            // 2. Crea un archivo temporal para la imagen (.jpg)
+            //Crea un archivo temporal para la imagen (.jpg)
             val fileImage = File.createTempFile("img_",
                 ".jpg", dirIma)
 
-            // 3. Define la autoridad (debe coincidir con el AndroidManifest)
+            //Define la autoridad (debe coincidir con el AndroidManifest)
             val auth = ctx.packageName + ".fileprovider"
 
-            // 4. Devuelve la URI segura
+            //Devuelve la URI segura
             return getUriForFile(ctx, auth, fileImage)
+        }
+
+        fun getAudioUri (ctx : Context): File {
+            // Define el subdirectorio "audios" en el caché
+            val dirAudio = File(ctx.cacheDir, "audios")
+            dirAudio.mkdirs()
+
+            // Crea un archivo temporal para el audio (.m4a común y ligero)
+            val fileAudio = File.createTempFile("audio_", ".m4a", dirAudio)
+
+            // 3. Devolvemos el objeto File. La conversión a URI segura (content://)
+            // se hará DENTRO del ViewModel, justo después de detener la grabación.
+            return fileAudio
         }
     }
 }

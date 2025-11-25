@@ -23,6 +23,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -33,14 +36,17 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import coil.compose.AsyncImage
 import com.example.smartnotes.R
+import com.example.smartnotes.ui.screens.AudioAttachmentDisplay
 import com.example.smartnotes.ui.viewmodels.AddNoteTaskViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -74,11 +81,14 @@ fun AttachmentsSection(
     onRecordAudioClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val isRecording = viewModel.isRecording
     val activity = context as? Activity
     val scope = rememberCoroutineScope()
     
     // Extraer el estado (para evitar usar viewModel.propiedad en cada lugar)
     val attachmentsList = viewModel.attachments
+
+    // PERIMOSOS ==============================================================================-
 
     // Función auxiliar para abrir configuración
     fun openAppSettings() {
@@ -134,16 +144,23 @@ fun AttachmentsSection(
     ) { isGranted ->
         if (isGranted) {
             onRecordAudioClick()
+            //viewModel.startRecording(context)
         } else {
             val showRationale = activity?.let {
                 ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.RECORD_AUDIO)
             } ?: false
 
             if (!showRationale) {
-                Toast.makeText(context, "Permiso de audio denegado. Ve a Ajustes para activarlo.", Toast.LENGTH_LONG).show()
+                Toast.makeText(context,
+                    "Permiso de audio denegado. Ve a Ajustes para activarlo.",
+                    Toast.LENGTH_LONG
+                ).show()
                 openAppSettings()
             } else {
-                Toast.makeText(context, "Se requiere permiso de micrófono", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context,
+                    "Se requiere permiso de micrófono",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -196,7 +213,7 @@ fun AttachmentsSection(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
-             // CORRECCIÓN: Usar handleGallerySelection también para documentos
+             //handleGallerySelection también para documentos
              scope.launch {
                 viewModel.handleGallerySelection(context, it, "document")
              }
@@ -221,13 +238,14 @@ fun AttachmentsSection(
             }
         }
     }
+    //=====================================================================================
 
 
     Text(stringResource(R.string.attachments_label), style = MaterialTheme.typography.titleMedium)
 
     Spacer(Modifier.height(8.dp))
     
-    // FILA DE BOTONES DE ACCIÓN
+    // FILA DE BOTONES DE ACCIÓN (en agregar o editar) =======================================
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth()
@@ -265,22 +283,148 @@ fun AttachmentsSection(
         }
 
         // Botón AUDIO
-        IconButton(onClick = { 
-            audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-        }) {
-            Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.record_audio_description))
+        IconButton(
+            onClick = {
+                if (isRecording) {
+                    viewModel.stopRecording()
+                } else {
+                    // Si no está grabando, inicia (chequeando/pidiendo permiso)
+                    audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                }
+            }
+        ) {
+            Icon(
+                // Cambia el icono si está grabando
+                imageVector = if (isRecording) Icons.Default.Stop else Icons.Default.Mic,
+                contentDescription = if (isRecording) "Detener grabación"
+                                    else stringResource(R.string.record_audio_description),
+                tint = if (isRecording) Color.Red else Color.Black
+            )
         }
     }
-    
+    //======================================================================================
+
     Spacer(Modifier.height(12.dp))
 
-    // --- VISUALIZACIÓN DE ADJUNTOS (MINIATURAS) ---
-    if (attachmentsList.isNotEmpty()) {
+    // --- VISUALIZACIÓN DE ADJUNTOS (MINIATURAS) en agregar o editar ------------------------
+    AttachmentsDisplay(viewModel)
+}
+
+@Composable
+fun AudioAttachmentDisplay(
+    audioPath: String,
+    audioType: String
+) {
+    val context = LocalContext.current
+
+    // Estado del reproductor
+    val audioPlayer = remember { AndroidAudioPlayer(context) }
+    var isPlaying by remember { mutableStateOf(false) }
+
+    // Limpiza automatica: el reproductor se libera cuando se dejan de consumir la app
+    DisposableEffect(audioPath) {
+        onDispose {
+            audioPlayer.stop()
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .widthIn(min = 200.dp) // Ancho mínimo para que se vea bien
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .padding(vertical = 8.dp, horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        //Icono y Nombre del Archivo
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.Mic,
+                contentDescription = "Audio",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+
+            Text(
+                text = audioPath.substringAfterLast('/'),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
+        //Botón de Reproducción/Pausa
+        IconButton(onClick = {
+            if (isPlaying) {
+                //Pausar
+                audioPlayer.stop()
+                isPlaying = false
+            } else {
+                // Reproducir
+                audioPlayer.play(audioPath) { isPlaying = false }
+                isPlaying = true
+            }
+        }) {
+            Icon(
+                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                contentDescription = if (isPlaying) "Pausar" else "Reproducir"
+            )
+        }
+    }
+}
+
+@Composable
+fun AttachmentsDisplay(
+    viewModel: AddNoteTaskViewModel
+) {
+    val archivos = viewModel.attachments
+    if (archivos.isEmpty()) return
+
+    val context = LocalContext.current
+    val audios = archivos.filter { it.tipoArchivo == "audio" }
+    val otrosArchivos = archivos.filter { it.tipoArchivo != "audio" }
+
+    if(audios.isNotEmpty()){
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
+        ) {
+            audios.forEach { audio ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // El reproductor
+                    Box(modifier = Modifier.weight(1f)) {
+                        AudioAttachmentDisplay(
+                            audioPath = audio.ruta,
+                            audioType = audio.tipoArchivo
+                        )
+                    }
+                    // Botón de eliminar audio
+                    IconButton(
+                        onClick = { viewModel.removeAttachment(audio) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Eliminar audio",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    if (otrosArchivos.isNotEmpty()) {
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            items(attachmentsList) { attachment ->
+            items(otrosArchivos) { attachment ->
                 Box(
                     modifier = Modifier
                         .size(100.dp)
@@ -304,7 +448,7 @@ fun AttachmentsSection(
                                 videoUri = attachment.ruta,
                                 modifier = Modifier.matchParentSize()
                             )
-                            
+
                             // Icono play overlay
                             Icon(
                                 imageVector = Icons.Default.PlayArrow,
@@ -316,21 +460,8 @@ fun AttachmentsSection(
                                     .padding(4.dp)
                             )
                         }
-                        "audio" -> {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    imageVector = Icons.Default.Mic,
-                                    contentDescription = "Audio",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = "Audio",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
                         "document" -> {
-                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(
                                     imageVector = Icons.Default.Description,
                                     contentDescription = "Documento",

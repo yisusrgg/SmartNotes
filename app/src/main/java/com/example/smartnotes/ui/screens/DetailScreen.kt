@@ -70,6 +70,9 @@ import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
 import android.media.MediaPlayer
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.text.style.TextOverflow
+import com.example.smartnotes.ui.components.AndroidAudioPlayer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -88,7 +91,13 @@ fun DetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(item?.title ?: "") },
+                title = {
+                    Text(
+                        item?.title ?: "",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis //"..."
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.primary
@@ -200,40 +209,6 @@ fun DetailContent(item: NotaTareaUiModel) {
     }
 }
 
-@Composable
-fun VideoPlayer(videoUri: Uri, modifier: Modifier = Modifier.fillMaxWidth()) {
-    val context = LocalContext.current
-    val exoPlayer = remember {
-        SimpleExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(videoUri))
-            prepare()
-        }
-    }
-    val playbackState = exoPlayer
-    val isPlaying = playbackState?.isPlaying ?: false
-
-    AndroidView(
-        factory = { context ->
-            PlayerView(context).apply {
-                player = exoPlayer
-            }
-        },
-        modifier = modifier
-    )
-
-    IconButton(
-        onClick = {
-            if (isPlaying) {
-                exoPlayer.pause()
-            } else {
-                exoPlayer.play()
-            }
-        },
-        modifier = Modifier
-            //.align(Alignment.BottomEnd)
-            .padding(16.dp)
-    ) { }
-}
 
 // Componente para generar thumbnail de video (Igual que en AttachmentsSection)
 @Composable
@@ -279,41 +254,63 @@ fun DetailVideoThumbnail(
 
 
 @Composable
-fun AudioPlayer(audioUri: String, modifier: Modifier = Modifier) {
+fun AudioAttachmentDisplay(
+    audioPath: String,
+    audioType: String
+) {
     val context = LocalContext.current
-    var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+
+    // Estado del reproductor
+    val audioPlayer = remember { AndroidAudioPlayer(context) }
     var isPlaying by remember { mutableStateOf(false) }
 
-    DisposableEffect(audioUri) {
-        mediaPlayer = MediaPlayer.create(context, Uri.parse(audioUri))
-        mediaPlayer?.setOnCompletionListener { isPlaying = false }
+    // Limpiza automatica: el reproductor se libera cuando se dejan de consumir la app
+    DisposableEffect(audioPath) {
         onDispose {
-            mediaPlayer?.release()
-            mediaPlayer = null
+            audioPlayer.stop()
         }
     }
 
     Row(
-        modifier = modifier.padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier
+            .widthIn(min = 200.dp) // Ancho mínimo para que se vea bien
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .padding(vertical = 8.dp, horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Icon(Icons.Default.Mic, contentDescription = "Audio", tint = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.width(8.dp))
-        Text(audioUri.substringAfterLast('/'))
+        //Icono y Nombre del Archivo
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.Mic,
+                contentDescription = "Audio",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(Modifier.width(8.dp))
 
+            Text(
+                text = audioPath.substringAfterLast('/'),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
+        //Botón de Reproducción/Pausa
         IconButton(onClick = {
             if (isPlaying) {
-                mediaPlayer?.pause()
+                //Pausar
+                audioPlayer.stop()
                 isPlaying = false
             } else {
-                mediaPlayer?.start()
+                // Reproducir
+                audioPlayer.play(audioPath) { isPlaying = false }
                 isPlaying = true
             }
         }) {
             Icon(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                contentDescription = (if (isPlaying) R.string.pause
-                else R.string.play_audio_description).toString()
+                contentDescription = if (isPlaying) "Pausar" else "Reproducir"
             )
         }
     }
@@ -328,129 +325,137 @@ fun AttachmentsDisplay(
 
     val context = LocalContext.current
 
+    val audios = archivos.filter { it.tipoArchivo == "audio" }
+    val otrosArchivos = archivos.filter { it.tipoArchivo != "audio" }
+
     Text(
         "${stringResource(R.string.attachments_label)}:",
         style = MaterialTheme.typography.bodyLarge,
         modifier = Modifier.padding(bottom = 8.dp)
     )
 
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        archivos.forEach {  archivo ->
-            
-            // Lógica para abrir archivo al hacer click
-            val onAttachmentClick = {
-                try {
-                    val path = archivo.ruta
-                    val uri: Uri
-                    val isContentUri = path.startsWith("content://")
-
-                    if (isContentUri) {
-                        uri = Uri.parse(path)
-                    } else {
-                        val file = File(path)
-                        if (file.exists()) {
-                             uri = FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                file
-                            )
-                        } else {
-                            uri = Uri.parse(path)
-                        }
-                    }
-
-                    val mimeType = when (archivo.tipoArchivo) {
-                        "image" -> "image/*"
-                        "video" -> "video/*"
-                        "audio" -> "audio/*"
-                        "document" -> "application/pdf"
-                        else -> "*/*"
-                    }
-
-                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(uri, mimeType)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    context.startActivity(Intent.createChooser(intent, "Abrir con..."))
-
-                } catch (e: Exception) {
-                    Toast.makeText(context, "No se puede abrir el archivo: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                }
+    //Mostrar audios
+    if (audios.isNotEmpty()) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp) // Espacio entre audios y otros adjuntos
+        ) {
+            audios.forEach { audio ->
+                AudioAttachmentDisplay(
+                    audioPath = audio.ruta,
+                    audioType = audio.tipoArchivo
+                )
             }
+        }
+    }
 
-            Box(
-                modifier = Modifier
-                    .size(160.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable(onClick = onAttachmentClick), // Habilitar click
-                contentAlignment = Alignment.Center
-            ) {
-                when (archivo.tipoArchivo) {
-                    "image" -> {
-                        AsyncImage(
-                            model = archivo.ruta,
-                            contentDescription = archivo.tipoArchivo,
-                            modifier = Modifier.matchParentSize(),
-                            contentScale = ContentScale.Crop
-                        )
+    // (Imágenes, Videos, Docs)
+    if (otrosArchivos.isNotEmpty()) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            otrosArchivos.forEach { archivo ->
+                // Lógica para abrir archivo al hacer click
+                val onAttachmentClick = {
+                    try {
+                        val path = archivo.ruta
+                        val uri: Uri
+                        val isContentUri = path.startsWith("content://")
+
+                        if (isContentUri) {
+                            uri = Uri.parse(path)
+                        } else {
+                            val file = File(path)
+                            if (file.exists()) {
+                                uri = FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.fileprovider",
+                                    file
+                                )
+                            } else {
+                                uri = Uri.parse(path)
+                            }
+                        }
+
+                        val mimeType = when (archivo.tipoArchivo) {
+                            "image" -> "image/*"
+                            //"video" -> "video/*"
+                            "audio" -> "audio/*"
+                            "document" -> "application/pdf"
+                            else -> "*/*"
+                        }
+
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, mimeType)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        context.startActivity(Intent.createChooser(intent, "Abrir con..."))
+
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "No se puede abrir el archivo: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
                     }
-                    "video" -> {
-                        // MOSTRAR MINIATURA DEL VIDEO EN LUGAR DE FONDO NEGRO
-                        DetailVideoThumbnail(
-                            videoUri = archivo.ruta,
-                            modifier = Modifier.matchParentSize()
-                        )
-                        
-                        // Icono de Play encima
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .background(Color.Black.copy(alpha = 0.3f)), // Sombra ligera para contraste
-                            contentAlignment = Alignment.Center
-                        ) {
-                             Icon(
-                                Icons.Default.PlayArrow,
-                                contentDescription = "Video",
-                                tint = Color.White,
+                }
+                //------------------------------------------------------------------------
+
+                Box(
+                    modifier = Modifier
+                        .size(160.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = onAttachmentClick),
+                    contentAlignment = Alignment.Center
+                ) {
+                    when (archivo.tipoArchivo) {
+                        "image" -> {
+                            AsyncImage(
+                                model = archivo.ruta,
+                                contentDescription = archivo.tipoArchivo,
+                                modifier = Modifier.matchParentSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        "video" -> {
+                            // MOSTRAR MINIATURA DEL VIDEO EN LUGAR DE FONDO NEGRO
+                            DetailVideoThumbnail(
+                                videoUri = archivo.ruta,
+                                modifier = Modifier.matchParentSize()
+                            )
+
+                            // Icono de Play encima
+                            Box(
                                 modifier = Modifier
-                                    .size(48.dp)
-                                    .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                                    .padding(8.dp)
-                            )
+                                    .matchParentSize()
+                                    .background(Color.Black.copy(alpha = 0.3f)), // Sombra ligera para contraste
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.PlayArrow,
+                                    contentDescription = "Video",
+                                    tint = Color.White,
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                                        .padding(8.dp)
+                                )
+                            }
                         }
-                    }
-                    "audio" -> {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier.matchParentSize().background(MaterialTheme.colorScheme.surfaceVariant)
-                        ) {
-                            Icon(
-                                Icons.Default.Mic,
-                                contentDescription = "Audio",
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(48.dp)
-                            )
-                            Text("Audio", style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                    "document" -> {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier.matchParentSize().background(MaterialTheme.colorScheme.surfaceVariant)
-                        ) {
-                            Icon(
-                                Icons.Default.Description,
-                                contentDescription = "Documento",
-                                tint = MaterialTheme.colorScheme.tertiary,
-                                modifier = Modifier.size(48.dp)
-                            )
-                            Text("PDF/Doc", style = MaterialTheme.typography.bodySmall)
+                        "document" -> {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                                modifier = Modifier.matchParentSize().background(MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Icon(
+                                    Icons.Default.Description,
+                                    contentDescription = "Documento",
+                                    tint = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                                Text("PDF/Doc", style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
                 }

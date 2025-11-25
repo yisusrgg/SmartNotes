@@ -267,23 +267,6 @@ fun ActionsAndMedia(
     ) {
 
 
-        /*if (item.audios.isNotEmpty()) {
-            Text("Audios:", style = MaterialTheme.typography.bodyMedium)
-            LazyRow {
-                items(item.audios) { path ->
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp)) {
-                        IconButton(onClick = {
-                            mediaPlayer?.release()
-                            mediaPlayer = MediaPlayer.create(context, Uri.parse(path)).apply { start() }
-                        }) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.play_audio_description))
-                        }
-                        Text(path.substringAfterLast("/"), style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-        }*/
-
         Spacer(modifier = Modifier.weight(1f))
 
         if (isTask && taskItem != null) {
