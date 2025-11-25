@@ -168,12 +168,14 @@ class AddNoteTaskViewModel (
 
                     // Solo programar si la fecha es futura
                     if (alarmTime.isAfter(LocalDateTime.now())) {
+                        val prefix = context.getString(R.string.reminder_message)
+
                         val alarmItem = AlarmItem(
                             alarmTime = alarmTime,
-                            message = "Tienes pendiente: ${itemToSave.descripcion.take(20)}...",
+                            message = "$prefix: ${itemToSave.descripcion.take(20)}...",
                             title = itemToSave.titulo,
                             taskId = savedId.toInt(),
-                            reminderId = reminderId //Usar ID de BD para unicidad
+                            reminderId = reminderId
                         )
                         alarmScheduler.schedule(alarmItem)
                     }
@@ -245,7 +247,7 @@ class AddNoteTaskViewModel (
         minute: Int
     ): java.time.LocalDateTime {
         val localDate = java.time.Instant.ofEpochMilli(dateMillis)
-            .atZone(java.time.ZoneId.systemDefault())
+            .atZone(java.time.ZoneOffset.UTC)
             .toLocalDate()
 
         return java.time.LocalDateTime.of(localDate, java.time.LocalTime.of(hour, minute))

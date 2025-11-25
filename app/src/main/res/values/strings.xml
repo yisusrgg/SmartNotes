@@ -51,6 +51,7 @@
     <string name="add_reminder_button">Agregar recordatorio</string>
     <string name="channel_name">Recordatorios de Tareas</string>
     <string name="channel_description">Canal para notificaciones de recordatorios de tareas</string>
+    <string name="reminder_message">Tienes pendiente</string>
 
 
 </resources>

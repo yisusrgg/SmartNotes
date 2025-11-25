@@ -59,8 +59,6 @@ class AndroidAlarmScheduler(
             alarmMillis,
             pendingIntent
         )
-
-        Log.d("AlarmScheduler", "Alarma programada: ${item.message} a las ${item.alarmTime}")
     }
 
     override fun cancel(item: AlarmItem) {

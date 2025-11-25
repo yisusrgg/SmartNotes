@@ -180,7 +180,11 @@ fun AddNoteTaskScreen(
     // NO DEBEN ESTAR EN EL VM
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = viewModel.notaTareaUiState.notaTareaDetails.fechaCumplimiento
-            ?.atZone(java.time.ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+            ?.toLocalDate()
+            ?.atStartOfDay(java.time.ZoneOffset.UTC)
+            /*?.atZone(java.time.ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+            ?: java.time.Instant.now().toEpochMilli()*/
+            ?.toInstant()?.toEpochMilli()
             ?: java.time.Instant.now().toEpochMilli()
     )
     val timePickerState = rememberTimePickerState(
@@ -285,7 +289,6 @@ fun NoteTaskBody(
                 val notificationPermissionLauncher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestPermission()
                 ) { isGranted ->
-                    // ...
                 }
 
                 // Llamar a esto cuando el usuario entra a la pantalla o intenta guardar un recordatorio

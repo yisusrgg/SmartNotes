@@ -18,7 +18,6 @@ import java.time.ZoneId
 class AlarmNotificationReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("AlarmReceiver", "¡Alarma recibida! Intentando mostrar notificación...")
 
         // 1. Recuperar datos pasados desde el Scheduler
         val message = intent.getStringExtra("EXTRA_MESSAGE") ?: "Tienes una tarea pendiente"
@@ -39,16 +38,16 @@ class AlarmNotificationReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_IMMUTABLE
         )
 
-        // 3. Construir la Notificación (Basado en la documentación oficial)
+        // Construir la Notificación (documentación oficial)
         val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Asegúrate de tener un icono válido
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent) // Acción al tocar
             .setAutoCancel(true) // Se borra al tocarla
 
-        // 4. Mostrar la notificación
+        //Mostrar la notificación
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // Usamos el taskId (o un ID único) para identificar la notificación

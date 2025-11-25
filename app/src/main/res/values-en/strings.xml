@@ -51,6 +51,7 @@
     <string name="add_reminder_button">Add reminder</string>
     <string name="channel_name">Reminders of Tasks</string>
     <string name="channel_description">Channel for task reminder notifications</string>
+    <string name="reminder_message">You have to</string>
 
 
 </resources>
