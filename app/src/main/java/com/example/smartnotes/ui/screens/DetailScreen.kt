@@ -295,6 +295,7 @@ fun AudioAttachmentDisplay(
                 style = MaterialTheme.typography.bodyMedium
             )
         }
+        Spacer(Modifier.width(8.dp))
 
         //Botón de Reproducción/Pausa
         IconButton(onClick = {

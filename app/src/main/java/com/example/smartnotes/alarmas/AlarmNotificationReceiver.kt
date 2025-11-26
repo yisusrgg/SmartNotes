@@ -19,15 +19,14 @@ class AlarmNotificationReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
 
-        // 1. Recuperar datos pasados desde el Scheduler
-        val message = intent.getStringExtra("EXTRA_MESSAGE") ?: "Tienes una tarea pendiente"
-        val title = intent.getStringExtra("EXTRA_TITLE") ?: "Recordatorio de Tarea"
+        // Recuperar datos pasados desde el Scheduler
+        val message = intent.getStringExtra("EXTRA_MESSAGE") ?: R.string.reminder_message_defaul.toString()
+        val title = intent.getStringExtra("EXTRA_TITLE") ?: R.string.reminder_title_defaul.toString()
         val taskId = intent.getIntExtra("EXTRA_TASK_ID", 0)
 
         val channelId = "task_reminders_channel"
 
-        // 2. Crear Intent para abrir la App al tocar la notificación
-        // (Opcional: Podrías navegar directo al detalle usando el taskId)
+        // Crear Intent para abrir la App al tocar la notificación
         val tapIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
@@ -40,12 +39,13 @@ class AlarmNotificationReceiver : BroadcastReceiver() {
 
         // Construir la Notificación (documentación oficial)
         val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            //.setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.smart_icono)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent) // Acción al tocar
-            .setAutoCancel(true) // Se borra al tocarla
+            .setAutoCancel(true)
 
         //Mostrar la notificación
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

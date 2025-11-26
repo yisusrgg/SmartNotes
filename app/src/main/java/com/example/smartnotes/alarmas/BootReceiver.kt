@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.example.smartnotes.R
 import com.example.smartnotes.SmartNotesApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +28,6 @@ class BootReceiver : BroadcastReceiver() {
 
             scope.launch {
                 try {
-                    // CORRECCIÓN: Usamos el método que sí existe en tu repositorio: getAllTareasStream()
                     val todasLasTareas = notasTareasRepository.getAllTareasStream().first()
                     
                     // Filtramos solo las que no están cumplidas
@@ -46,7 +46,7 @@ class BootReceiver : BroadcastReceiver() {
                                 if (alarmTime.isAfter(LocalDateTime.now())) {
                                     val alarmItem = AlarmItem(
                                         alarmTime = alarmTime,
-                                        message = "Tienes pendiente: ${tarea.descripcion.take(20)}...",
+                                        message = "${R.string.reminder_message}: ${tarea.descripcion.take(20)}...",
                                         title = tarea.titulo,
                                         taskId = tarea.id,
                                         reminderId = recordatorio.id 

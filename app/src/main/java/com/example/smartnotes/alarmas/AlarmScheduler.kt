@@ -53,12 +53,30 @@ class AndroidAlarmScheduler(
             .toInstant()
             .toEpochMilli()
 
-        // Programar la alarma exacta
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            alarmMillis,
-            pendingIntent
-        )
+
+        // --- BLOQUE DE SEGURIDAD PARA ANDROID 12+ (API 31) ---
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            // No tenemos permiso de alarma exacta?
+            if (!alarmManager.canScheduleExactAlarms()) {
+                //Programar una alarma no exacta
+                alarmManager.set(
+                    AlarmManager.RTC_WAKEUP,
+                    alarmMillis,
+                    pendingIntent
+                )
+                return
+            }
+        }
+        // Si tenemos permiso o somos Android < 12, programar la exacta
+        try {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                alarmMillis,
+                pendingIntent
+            )
+        } catch (e: SecurityException) {
+            Log.e("AlarmScheduler", "${e.message}")
+        }
     }
 
     override fun cancel(item: AlarmItem) {

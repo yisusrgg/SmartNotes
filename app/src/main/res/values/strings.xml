@@ -52,6 +52,9 @@
     <string name="channel_name">Recordatorios de Tareas</string>
     <string name="channel_description">Canal para notificaciones de recordatorios de tareas</string>
     <string name="reminder_message">Tienes pendiente</string>
+    <string name="reminder_message_defaul">Tienes una tarea pendiente</string>
+    <string name="reminder_title_defaul">Recordatorio de Tarea</string>
+
 
 
 </resources>

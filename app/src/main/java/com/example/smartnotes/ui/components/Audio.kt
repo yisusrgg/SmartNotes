@@ -83,7 +83,6 @@ class AndroidAudioPlayer(
 
         MediaPlayer().apply {
             try {
-                // Lógica para detectar si es content:// o ruta local
                 if (uri.startsWith("content://")) {
                     setDataSource(context, Uri.parse(uri))
                 } else {

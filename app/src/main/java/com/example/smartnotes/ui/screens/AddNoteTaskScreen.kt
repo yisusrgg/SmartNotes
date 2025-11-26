@@ -2,8 +2,11 @@ package com.example.smartnotes.ui.screens
 
 
 import android.Manifest
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -51,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import com.example.smartnotes.R
 import com.example.smartnotes.providers.FileProvider
 import com.example.smartnotes.ui.components.AttachmentsSection
@@ -70,9 +74,6 @@ fun AddNoteTaskScreen(
     onBack: () -> Unit,
     layoutType: LayoutType
 ){
-    // La carga inicial del tipo ya se maneja en el NavHost con LaunchedEffect.
-    // No necesitamos viewModel.setType(type) aquí si venimos de editar.
-    
     // El estado del UI se extrae para que los campos de texto reaccionen.
     val uiState = viewModel.notaTareaUiState
     val notaTareaDetails = uiState.notaTareaDetails
@@ -182,8 +183,6 @@ fun AddNoteTaskScreen(
         initialSelectedDateMillis = viewModel.notaTareaUiState.notaTareaDetails.fechaCumplimiento
             ?.toLocalDate()
             ?.atStartOfDay(java.time.ZoneOffset.UTC)
-            /*?.atZone(java.time.ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
-            ?: java.time.Instant.now().toEpochMilli()*/
             ?.toInstant()?.toEpochMilli()
             ?: java.time.Instant.now().toEpochMilli()
     )
@@ -193,7 +192,7 @@ fun AddNoteTaskScreen(
     )
 
 
-    // --- 1. DatePickerDialog ---
+    // DatePickerDialog ---
     if (viewModel.showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { viewModel.setDatePickerVisibility(false) },
@@ -252,9 +251,62 @@ fun NoteTaskBody(
     onRecordAudio: () -> Unit
 ){
     val notaTareaDetails = viewModel.notaTareaUiState.notaTareaDetails
-    
-    // 1. Creamos el estado del scroll
+    val context = LocalContext.current
+    val activity = context as? android.app.Activity
+    // Creamos el estado del scroll
     val scrollState = rememberScrollState()
+
+    //Permiso de notificaciones --------
+    fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", context.packageName, null)
+            // Agrega esta bandera por seguridad si el contexto no es una Activity pura
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    }
+
+    //Pedir permiso de notificaciones
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.addCurrentReminder()
+        } else {
+            val showRationale = activity?.let {
+                ActivityCompat.shouldShowRequestPermissionRationale(
+                    it,
+                    Manifest.permission.POST_NOTIFICATIONS
+                )
+            } ?: false
+            if (!showRationale) {
+                Toast.makeText(context, "Habilita las notificaciones en Ajustes para recibir recordatorios", Toast.LENGTH_LONG).show()
+                openAppSettings()
+            } else {
+                Toast.makeText(context, "Se requiere permiso para avisarte", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    // Maneja el evento de agregar recordatorio
+    val onAddReminderClick: () -> Unit = {
+        // En Android 13+ ocupa permisos en timepod e ejecucion, sino solo agregar recordatorios
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permissionStatus = androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            )
+
+            if (permissionStatus == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                viewModel.addCurrentReminder() //tenemos permiso
+            } else {
+                //Sin permisos, se lanza el launcher
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        } else {
+            viewModel.addCurrentReminder()
+        }
+    }
+
 
     Column (modifier = modifier
         .padding(16.dp)
@@ -286,20 +338,11 @@ fun NoteTaskBody(
             Spacer(Modifier.height(12.dp))
             val isDateSet = viewModel.notaTareaUiState.notaTareaDetails.fechaCumplimiento != null
             if(isDateSet) {
-                val notificationPermissionLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission()
-                ) { isGranted ->
-                }
-
-                // Llamar a esto cuando el usuario entra a la pantalla o intenta guardar un recordatorio
-                LaunchedEffect(Unit) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    }
-                }
-                RemindersSection(viewModel = viewModel)
+                RemindersSection(
+                    viewModel = viewModel,
+                    onAddReminderCheck = onAddReminderClick
+                )
             }
-
         }
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -342,19 +385,20 @@ fun TaskFieldsSection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RemindersSection(
-    viewModel: AddNoteTaskViewModel
+    viewModel: AddNoteTaskViewModel,
+    onAddReminderCheck: () -> Unit
 ) {
     val reminderState = viewModel.reminderDetails
     val isOptionValid = reminderState.selectedReminderOption != R.string.reminder_none
 
     Spacer(modifier = Modifier.height(12.dp))
 
-    // --- 1. DropdownMenuBox ---
+    // DropdownMenuBox ---
     ExposedDropdownMenuBox(
         expanded = reminderState.isReminderExpanded,
         onExpandedChange = { viewModel.setReminderExpanded(!reminderState.isReminderExpanded) }
     ) {
-        // --- 2. OutlinedTextField (Menu Anchor) ---
+        // OutlinedTextField (Menu Anchor) ---
         OutlinedTextField(
             value = stringResource(id = reminderState.selectedReminderOption),
             onValueChange = {},
@@ -362,11 +406,10 @@ fun RemindersSection(
             readOnly = true,
             trailingIcon = {
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-
                     if (isOptionValid) {
                         IconButton(
                             onClick = {
-                                viewModel.addCurrentReminder()
+                                onAddReminderCheck()
                             },
                             modifier = Modifier
                                 .size(24.dp)
@@ -389,7 +432,7 @@ fun RemindersSection(
                 .menuAnchor()
         )
 
-        // --- 3. ExposedDropdownMenu ---
+        // ExposedDropdownMenu ---
         ExposedDropdownMenu(
             expanded = reminderState.isReminderExpanded,
             onDismissRequest = { viewModel.setReminderExpanded(false) }
@@ -433,13 +476,13 @@ fun RecordatoriosListDisplay(viewModel: AddNoteTaskViewModel) {
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // 1. Muestra cuándo debe sonar (Ej: 10 minutos antes)
+                // Muestra cuándo debe sonar (Ej: 10 minutos antes)
                 Text(
                     text = stringResource(id = reminder.opcionResId),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
-                // 2. Muestra la hora exacta calculada
+                // Muestra la hora exacta calculada
                 // Formato la fecha Long (milisegundos) a una cadena legible
                 val formattedTime = java.time.Instant.ofEpochMilli(reminder.fechaMillis)
                     .atZone(java.time.ZoneId.systemDefault())

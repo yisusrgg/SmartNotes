@@ -52,6 +52,8 @@
     <string name="channel_name">Reminders of Tasks</string>
     <string name="channel_description">Channel for task reminder notifications</string>
     <string name="reminder_message">You have to</string>
+    <string name="reminder_message_defaul">You have a pending task</string>
+    <string name="reminder_title_defaul">Task Reminder</string>
 
 
 </resources>

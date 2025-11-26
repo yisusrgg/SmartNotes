@@ -82,11 +82,11 @@ class AddNoteTaskViewModel (
         val id = itemId.toIntOrNull() ?: return
         val item = repository.getNotaTareaById(id) ?: return
 
-        // 1. Cargar detalles de la nota/tarea
+        // Cargar detalles de la nota/tarea
         val details = item.toNotaTareaDetails()
         updateUiState(details)
 
-        // 2. Si es tarea, cargar sus recordatorios
+        //Si es tarea, cargar sus recordatorios
         if (item.tipo == "task") {
              val recordatorios = recordatorioRepository.getAllRecordatoriosStream(id).first()
              recordatoriosList = recordatorios.map { 
@@ -130,10 +130,7 @@ class AddNoteTaskViewModel (
                 repository.updateItem(itemToSave)
                 savedId = itemToSave.id.toLong()
 
-                // ESTRATEGIA DE EDICIÓN: Borrar antiguos y reinsertar los actuales
-                
-                // Borrar archivos adjuntos previos en BD
-                // Esto asegura que si eliminaste un adjunto de la lista, se borre de la BD
+                //Borrar antiguos y reinsertar los actuales
                 val existingFiles = archivosRepository.getAllArchivosStream(savedId.toInt()).first()
                 existingFiles.forEach { archivosRepository.deleteItem(it) }
                 
@@ -160,7 +157,7 @@ class AddNoteTaskViewModel (
                     val insertReminder = recordatorioRepository.insertItem(recordatorioEntity)
                     val reminderId = insertReminder.toInt()
 
-                    //Recordatroios
+                    //NOTIFICACIONES------------------
                     // Programas la alarma
                     val alarmTime = java.time.Instant.ofEpochMilli(reminder.fechaMillis)
                         .atZone(java.time.ZoneId.systemDefault())

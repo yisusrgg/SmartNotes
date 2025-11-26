@@ -298,7 +298,7 @@ fun AttachmentsSection(
                 imageVector = if (isRecording) Icons.Default.Stop else Icons.Default.Mic,
                 contentDescription = if (isRecording) "Detener grabación"
                                     else stringResource(R.string.record_audio_description),
-                tint = if (isRecording) Color.Red else Color.Black
+                tint = if (isRecording) Color.Red else MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -308,69 +308,6 @@ fun AttachmentsSection(
 
     // --- VISUALIZACIÓN DE ADJUNTOS (MINIATURAS) en agregar o editar ------------------------
     AttachmentsDisplay(viewModel)
-}
-
-@Composable
-fun AudioAttachmentDisplay(
-    audioPath: String,
-    audioType: String
-) {
-    val context = LocalContext.current
-
-    // Estado del reproductor
-    val audioPlayer = remember { AndroidAudioPlayer(context) }
-    var isPlaying by remember { mutableStateOf(false) }
-
-    // Limpiza automatica: el reproductor se libera cuando se dejan de consumir la app
-    DisposableEffect(audioPath) {
-        onDispose {
-            audioPlayer.stop()
-        }
-    }
-
-    Row(
-        modifier = Modifier
-            .widthIn(min = 200.dp) // Ancho mínimo para que se vea bien
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            .padding(vertical = 8.dp, horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        //Icono y Nombre del Archivo
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                Icons.Default.Mic,
-                contentDescription = "Audio",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(Modifier.width(8.dp))
-
-            Text(
-                text = audioPath.substringAfterLast('/'),
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        //Botón de Reproducción/Pausa
-        IconButton(onClick = {
-            if (isPlaying) {
-                //Pausar
-                audioPlayer.stop()
-                isPlaying = false
-            } else {
-                // Reproducir
-                audioPlayer.play(audioPath) { isPlaying = false }
-                isPlaying = true
-            }
-        }) {
-            Icon(
-                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                contentDescription = if (isPlaying) "Pausar" else "Reproducir"
-            )
-        }
-    }
 }
 
 @Composable
